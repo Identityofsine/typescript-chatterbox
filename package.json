@@ -1,0 +1,22 @@
+{
+  "name": "chatterbox-typescript",
+  "version": "0.0.1",
+  "description": "ChatterBox-Typescript",
+  "main": "index.ts",
+  "scripts": {
+    "dev": "nodemon --exec ts-node index.ts",
+    "release": "tsc && node index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "discord.js": "^14.13.0",
+    "minimist": "^1.2.8",
+    "nodemon": "^3.0.1",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.2.2"
+  },
+  "devDependencies": {
+    "@types/minimist": "^1.2.3"
+  }
+}
