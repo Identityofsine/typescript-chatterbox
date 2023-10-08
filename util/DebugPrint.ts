@@ -2,8 +2,10 @@ import minimist from "minimist";
 
 let isDebug = false;
 let args = minimist(process.argv.slice(2));
-if (args.d)
+if (args.d) {
 	isDebug = true;
+	console.log("[DEBUG] Debug mode enabled");
+}
 
 export { isDebug };
 

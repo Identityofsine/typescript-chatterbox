@@ -11,16 +11,13 @@ interface ISlashFactory {
 
 
 export function slashFactory({ handle, description, options, callback }: ISlashFactory) {
+	debugPrint("[DEBUG: ℹ️] Slash command factory called, handle: ", handle, ", description: ", description, ", options: ", options, ", callback: ", callback);
 	const data = new SlashCommandBuilder()
 		.setName(handle)
 		.setDescription(description)
 	return {
-		data,
-		async execute(interaction: any) {
-			debugPrint("[INFO] Slash command received, interaction type : ", interaction.type);
-
-			interaction.reply("✅ Slash command received");
-		}
+		data: data,
+		execute: callback,
 	}
 
 }
