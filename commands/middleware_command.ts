@@ -14,9 +14,14 @@ export default function prefix_middleware(message: Message) {
 		const command = commands.find(command => command.name === name);
 		if (command) {
 			debugPrint("[DEBUG: ℹ️] Command found, executing callback");
-			command.callback(message);
+			command.callback(message).catch((e: Error) => {
+				debugPrint("[ERROR:%s ❌]", command.name, e.message);
+				message.reply("Error executing command.");
+				message.react("❌");
+
+			});
 		}
 
-		message.react("👍");
+		message.react("✅");
 	}
 }
