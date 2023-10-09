@@ -1,12 +1,15 @@
+import { Guild } from 'discord.js';
 import { SyncFunction } from '../../types/asyncfunction';
+
+type CommandGenericFunction<Args extends Record<any, any>, T> = SyncFunction<{ props: Args } & { guild: Guild }, T>;
 
 class Command<Args extends Record<any, any>, T> {
 	private _name: string;
 	private _description: string;
 	private _options: any;
-	private _callback: SyncFunction<Args, T>;
+	private _callback: CommandGenericFunction<Args, T>;
 
-	public constructor(name: string, description: string, options: any, callback: SyncFunction<Args, T>) {
+	public constructor(name: string, description: string, options: any, callback: CommandGenericFunction<Args, T>) {
 		this._name = name;
 		this._description = description;
 		this._options = options;
@@ -28,6 +31,7 @@ class Command<Args extends Record<any, any>, T> {
 	get callback(): any {
 		return this._callback;
 	}
+
 }
 
 export default Command;
