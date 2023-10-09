@@ -1,7 +1,7 @@
 import { Guild } from 'discord.js';
-import { SyncFunction } from '../../types/asyncfunction';
+import { AsyncFunction } from '../../types/asyncfunction';
 
-type CommandGenericFunction<Args extends Record<any, any>, T> = SyncFunction<{ props: Args } & { guild: Guild }, T>;
+type CommandGenericFunction<Args extends Record<any, any>, T> = AsyncFunction<{ props: Args } & { guild: Guild }, T>;
 
 class Command<Args extends Record<any, any>, T> {
 	private _name: string;

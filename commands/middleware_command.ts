@@ -13,8 +13,8 @@ export default function prefix_middleware(message: Message) {
 		const name = message.content.split(" ")[0].slice(prefix.length).trimStart();
 		const command = commands.find(command => command.name === name);
 		if (command) {
-			debugPrint("[DEBUG: ℹ️] Command found, executing callback");
-			command.callback(message).catch((e: Error) => {
+			debugPrint("[DEBUG: ℹ️] Command found \"%s\", executing callback", command.name);
+			command.callback({ props: message, guild: message.guild }).catch((e: Error) => {
 				debugPrint("[ERROR:%s ❌]", command.name, e.message);
 				message.reply("Error executing command.");
 				message.react("❌");

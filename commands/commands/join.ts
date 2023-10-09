@@ -7,8 +7,9 @@ import debugPrint from "../../util/DebugPrint";
 export const join = new Command<Message, void>('join', 'Join the voice channel you are in', [],
 
 	async ({ props, guild }) => {
-		if (!props?.member) throw new Error('Member not found.');
-		const channel_id = props.member?.voice.channelId ?? -1; // Get the channel id of the user
+		debugPrint(props);
+		if (!props?.author) throw new Error('Author not found.');
+		const channel_id = guild.members.cache.filter(member => member.id === props.author.id).first()?.voice.channelId ?? -1;
 		const guild_id = guild?.id ?? -1;
 		if (channel_id === -1 || guild_id === -1) {
 			throw new Error('User not in voice channel.');
