@@ -63,6 +63,7 @@ export class AudioManager {
 				event(byte);
 			});
 		});
+		track.start();
 		this._queue.push(track);
 	}
 

@@ -4,6 +4,7 @@ import GetMember from "../../util/GetMember";
 import Command from "./command";
 import { DiscordBotError } from "../../types/error";
 import { getVoiceConnection, joinVoiceChannel } from "@discordjs/voice";
+import debugPrint from "../../util/DebugPrint";
 
 export const play = new Command<Message, void>('play', 'Play a song', [],
 	async ({ props, guild }) => {
@@ -31,6 +32,7 @@ export const play = new Command<Message, void>('play', 'Play a song', [],
 		//#region audio handling
 		try {
 			audio_manager.on('onTick', async ({ byte }: { byte: Buffer }) => {
+				debugPrint("[DEBUG: play] Trying to Play OpusPacket");
 				connection.playOpusPacket(byte);
 			});
 			audio_manager.addToQueue("https://www.youtube.com/watch?v=Wj8pZ1wTKB8");

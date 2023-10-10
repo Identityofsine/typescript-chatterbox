@@ -2,8 +2,6 @@ import ytdl from "@distube/ytdl-core";
 import ffpmeg from "fluent-ffmpeg";
 import { Readable, Writable, Transform } from "stream";
 import debugPrint from "./DebugPrint";
-import { DiscordBotError } from "../types/error";
-import { CastWriteableToReadable } from "./WriteabletoReadable";
 
 export namespace Youtube {
 	interface SearchId {
@@ -268,24 +266,34 @@ export namespace Youtube {
 		}
 
 		await (new Promise((resolve, reject) => {
-			ffpmeg()
-				.input(yt_buffer as Readable)
-				.audioChannels(1)
-				.toFormat('wav')
-				.pipe()
-				.on('data', (chunk) => {
+
+			const temp_pipe = new Writable({
+				write(chunk, encoding, callback) {
 					debugPrint("[Youtube][FFPMEG] Buffering: " + chunk.length + " bytes");
 					audio_prebuffer.push(chunk);
-				})
-				.on('close', () => {
-					debugPrint("[Youtube][FFPMEG] Closed");
+					callback();
+				},
+				final(callback) {
+					finish_pipe();
+					resolve(null)
+					callback();
+				}
+			})
+
+			ffpmeg()
+				.input(yt_buffer as Readable)
+				.audioChannels(2)
+				.toFormat('wav')
+				.on('end', () => {
+					debugPrint("[Youtube][FFPMEG] END");
 					finish_pipe();
 					resolve(null);
 				})
 				.on('error', (err) => {
 					debugPrint("[Youtube][FFPMEG] Error: " + err);
 					reject(err);
-				});
+				})
+				.pipe(temp_pipe, { end: true })
 		}));
 
 		return { video_info: yt_info, buffer: buffer };
