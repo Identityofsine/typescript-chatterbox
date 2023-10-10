@@ -137,6 +137,7 @@ export class AudioTrack {
 			await (new Promise((resolve) => {
 				const reducer = last_packet;
 				const timeout = packet_interval - reducer;
+
 				setTimeout(() => {
 					resolve(null);
 				}, timeout);
