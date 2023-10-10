@@ -24,7 +24,8 @@ export class AudioManager {
 		const track_buffer = await Youtube.getAudioBuffer(url);
 		if (track_buffer) {
 			try {
-				return new AudioTrack(track_buffer.buffer, track_buffer.video_info.title);
+				const track = new AudioTrack(track_buffer.buffer, track_buffer.video_info.title);
+				return track;
 			} catch (err) {
 				//print stack trace
 
