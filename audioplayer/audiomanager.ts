@@ -20,12 +20,11 @@ export class AudioManager {
 
 	}
 
-	private m_downloadTrack(url: string): AudioTrack | null {
-		Youtube.getAudioBuffer(url, ({ video_info, buffer }: Youtube.YoutubeResponse) => {
-			debugPrint(`Downloaded ${video_info.title} from ${url}`);
-		}).catch((err) => {
-			throw new DiscordBotError("Failed to download audio buffer");
-		});
+	private async m_downloadTrack(url: string): Promise<AudioTrack | null> {
+		const track_buffer = await Youtube.getAudioBuffer(url);
+		if (track_buffer) {
+			return new AudioTrack(track_buffer.buffer, track_buffer.video_info.title);
+		}
 		return null;
 	}
 
@@ -48,9 +47,9 @@ export class AudioManager {
 		this._events.get(event).push(func);
 	}
 
-	public addToQueue(song: string): void {
+	public async addToQueue(song: string) {
 		//TODO: add song to queue
-		const track = this.m_downloadTrack(song);
+		const track = await this.m_downloadTrack(song);
 		if (!track) throw new DiscordBotError("Failed to download track");
 		track.on('onTick', async (byte: { byte: Buffer }) => {
 			this._events.get('onTick').map((event: AsyncFunction<{ byte: Buffer }, void>) => {

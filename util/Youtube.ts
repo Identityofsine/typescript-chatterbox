@@ -1,6 +1,6 @@
 import ytdl from "@distube/ytdl-core";
 import ffpmeg from "fluent-ffmpeg";
-import { Readable } from "stream";
+import { Readable, Writable } from "stream";
 import debugPrint from "./DebugPrint";
 import { DiscordBotError } from "../types/error";
 
@@ -227,7 +227,7 @@ export namespace Youtube {
 	}
 
 	export type YoutubeResponse = { video_info: VideoInfo, buffer: Buffer }
-	export async function getAudioBuffer(url: string, callback: (response: YoutubeResponse) => void) {
+	export async function getAudioBuffer(url: string): Promise<YoutubeResponse> {
 		const yt_download = ytdl(url);
 		const yt_info_uncasted = await ytdl.getBasicInfo(url);
 		const yt_info: VideoInfo = {
@@ -235,29 +235,27 @@ export namespace Youtube {
 			description: yt_info_uncasted.videoDetails.description,
 			duration: Number(yt_info_uncasted.videoDetails.lengthSeconds),
 		}
-		const audio_buffer = [];
-		try {
-			ffpmeg()
-				.input(yt_download)
-				.format('pcm_s16le')
-				.audioChannels(2)
-				.toFormat('wav')
-				.pipe()
-				.on('data', (chunk: Buffer) => {
-					audio_buffer.push(chunk);
-				})
-				.on('end', () => {
-					const end_buffer = Buffer.concat(audio_buffer);
-					callback({ video_info: yt_info, buffer: end_buffer });
-					debugPrint("[DEBUG][Youtube] Finished downloading audio buffer");
-				})
-				.on('error', (err) => {
-					debugPrint("[ERROR][Youtube] Failed to download audio buffer: " + err);
-					throw new DiscordBotError("Failed to download audio buffer");
-				});
-		} catch (e) {
-			debugPrint("[ERROR][Youtube] Failed to download audio buffer: " + e);
-			throw new DiscordBotError("Failed to download audio buffer");
-		}
+		const audio_pipe = new Writable;
+		ffpmeg()
+			.input(yt_download)
+			.audioChannels(2)
+			.toFormat('wav')
+			.pipe(audio_pipe)
+			.on('error', (err) => {
+				debugPrint("[ERROR][Youtube] Failed to download audio buffer: " + err);
+				throw new DiscordBotError("Failed to download audio buffer");
+			});
+		const buffer = await new Promise<Buffer>((resolve, reject) => {
+			const chunks: Buffer[] = [];
+			audio_pipe.on('data', (chunk: Buffer) => {
+				chunks.push(chunk);
+			});
+			audio_pipe.on('end', () => {
+				resolve(Buffer.concat(chunks));
+			});
+			audio_pipe.on('error', reject);
+		});
+
+		return { video_info: yt_info, buffer: buffer };
 	}
 }
