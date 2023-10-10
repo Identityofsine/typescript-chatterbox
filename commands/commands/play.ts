@@ -49,6 +49,11 @@ export const play = new Command<Message, void>('play', 'Play a song', [],
 			audio_manager.on('onTick', async ({ byte }) => {
 				connection.playOpusPacket(byte);
 			})
+			audio_manager.on('onEnd', async () => {
+				debugExecute(() => {
+					props.channel.send(`**[DEBUG:ℹ️] I have finished playing ${url} **`);
+				});
+			});
 			audio_manager.addToQueue(url);
 		} catch (e) {
 			throw new DiscordBotError(e.message);

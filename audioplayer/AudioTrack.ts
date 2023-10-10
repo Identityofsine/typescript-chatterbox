@@ -119,6 +119,10 @@ export class AudioTrack {
 
 		const send_packet = async () => {
 			const packet_size = this._audio_opec_packet_sizes[packet_index];
+			if (packet_size === undefined) {
+				this.stop();
+				return 0;
+			}
 			const packet = Buffer.alloc(packet_size);
 			this._audio_stream_opec.copy(packet, 0, buffer_index, buffer_index + packet_size);
 			buffer_index += packet_size;
