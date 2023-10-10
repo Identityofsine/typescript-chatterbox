@@ -16,7 +16,7 @@ export const play = new Command<Message, void>('play', 'Play a song', [],
 		} else {
 			throw new DiscordBotError("You must be in a voice channel to use this command.")
 		}
-
+		//#region connection verifyier
 		let connection = getVoiceConnection(guild.id);
 		if (!connection) {
 			connection = joinVoiceChannel({
@@ -31,5 +31,9 @@ export const play = new Command<Message, void>('play', 'Play a song', [],
 				adapterCreator: guild.voiceAdapterCreator,
 			});
 		}
+		//#region audio handling
+		audio_manager.addToQueue("https://www.youtube.com/watch?v=5qap5aO4i9A");
+
+
 
 	});

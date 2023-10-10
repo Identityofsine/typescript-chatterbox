@@ -1,3 +1,4 @@
+import { OpusEncoder } from "@discordjs/opus";
 import { AsyncFunction } from "../types/asyncfunction";
 
 export type AudioTrackEvents = 'onTick' | 'onEnd' | 'onStart';
@@ -7,7 +8,7 @@ export class AudioTrack {
 	private _url: string;
 	private _duration: number;
 	private _thumbnail: string;
-	private _events: Map<String, AsyncFunction<any, void>[]> = new Map<String, AsyncFunction<any, void>[]>();
+	private _events: Map<String, AsyncFunction<{ byte: number }, void>[]> = new Map<String, AsyncFunction<{ byte: number }, void>[]>();
 	private _is_playing: boolean = false;
 	private _audio_buffer: Buffer;
 
@@ -16,7 +17,7 @@ export class AudioTrack {
 		this._url = url;
 		this._duration = duration;
 		this._thumbnail = thumbnail;
-		this._audio_buffer = audio_buffer;
+		this._audio_buffer = AudioTrack.m_encodeAudio(audio_buffer);
 	}
 
 	public get title(): string {
@@ -37,20 +38,31 @@ export class AudioTrack {
 
 
 	public start(): void {
-
+		if (this._is_playing) {
+			return;
+		}
+		this.m_onTick();
 	}
 
 	public stop(): void {
+		this._events.get('onEnd').map((event: AsyncFunction<any, void>) => {
+			event(null);
+		});
+	}
 
+	private static m_encodeAudio(audio_buffer: Buffer): Buffer {
+		const encoder = new OpusEncoder(48000, 2);
+		return encoder.encode(audio_buffer);
 	}
 
 	//play through the track opec and call the onTick event
 	private async m_onTick() {
 		//start track loop, this should progress through the track at the right speed
-		while (this._is_playing) {
-			const event_param = null;
-			this._events.get('onTick').map((event: AsyncFunction<any, void>) => {
-				event(event_param);
+		for (let i = 0; i < this._audio_buffer.length; i++) {
+			if (!this._is_playing) break;
+			const event_param = this._audio_buffer[i];
+			this._events.get('onTick').map((event: AsyncFunction<{ byte: number }, void>) => {
+				event({ byte: event_param });
 			});
 		}
 	}
