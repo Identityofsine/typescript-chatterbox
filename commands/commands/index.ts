@@ -2,5 +2,6 @@ import { join } from "./join";
 import { leave } from "./leave";
 import { ping } from "./ping";
 import { play } from "./play";
+import { stop } from "./stop";
 
-export const commands = [ping, join, leave, play];
+export const commands = [ping, join, leave, play, stop];

@@ -1,10 +1,7 @@
 import { OpusEncoder } from "@discordjs/opus";
-import { Transform, Readable } from "stream";
 import { AsyncFunction } from "../types/asyncfunction";
 import debugPrint from "../util/DebugPrint";
 import { PCM } from "../util/PCM";
-import createState from "../obj/state";
-import { time } from "discord.js";
 
 export type AudioTrackEvents = 'onTick' | 'onEnd' | 'onStart' | 'onReady';
 
@@ -70,6 +67,10 @@ export class AudioTrack {
 	}
 
 	public stop(): void {
+		this._is_playing = false;
+	}
+
+	private m_callEnd() {
 		this._events.get('onEnd').map((event: AsyncFunction<any, void>) => {
 			event(null);
 		});
@@ -147,6 +148,7 @@ export class AudioTrack {
 				debugPrint("[AudioTrack Tick] Next Base Interval: %d ms", timeout)
 			}));
 		}
+		this.m_callEnd();
 
 
 	}

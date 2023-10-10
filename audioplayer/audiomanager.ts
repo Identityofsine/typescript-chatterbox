@@ -9,6 +9,7 @@ export class AudioManager {
 	private _guild: Guild;
 	private _queue: AudioTrack[] = [];
 	private _is_playing: boolean = false;
+	private _current_track: AudioTrack;
 	private _events: Map<String, AsyncFunction<{ byte: Buffer }, void>[]> = new Map<String, AsyncFunction<{ byte: Buffer }, void>[]>();
 
 
@@ -48,6 +49,12 @@ export class AudioManager {
 		return this._queue.length === 0;
 	}
 
+	public stop() {
+		if (!this._current_track) throw new DiscordBotError("No track is playing");
+		this._current_track.stop();
+		this._is_playing = false;
+	}
+
 	public on(event: AudioTrackEvents, func: AsyncFunction<{ byte: Buffer }, void>) {
 		if (!this._events.has(event)) {
 			this._events.set(event, []);
@@ -64,6 +71,12 @@ export class AudioManager {
 				event(byte);
 			});
 		});
+		track.on('onEnd', async () => {
+			this._events.get('onEnd').map((event: AsyncFunction<{ byte: Buffer }, void>) => {
+				event(null);
+			});
+		});
+		this._current_track = track;
 		track.start();
 		this._queue.push(track);
 	}

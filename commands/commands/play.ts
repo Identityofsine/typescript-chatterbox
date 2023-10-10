@@ -4,7 +4,8 @@ import GetMember from "../../util/GetMember";
 import Command from "./command";
 import { DiscordBotError } from "../../types/error";
 import { AudioPlayer, AudioResource, getVoiceConnection, joinVoiceChannel } from "@discordjs/voice";
-import debugPrint from "../../util/DebugPrint";
+import debugPrint, { debugExecute } from "../../util/DebugPrint";
+import { ArgumentGrabber } from "../arguments/arguments";
 
 export const play = new Command<Message, void>('play', 'Play a song', [],
 	async ({ props, guild }) => {
@@ -31,10 +32,24 @@ export const play = new Command<Message, void>('play', 'Play a song', [],
 		}
 		//#region audio handling
 		try {
+			const url = ArgumentGrabber<'url' | 'query'>(props, ['url']).url;
+
+			debugExecute(() => {
+				if (url)
+					props.channel.send("**[DEBUG:ℹ️] Trying to Play : *" + url + "***");
+				else
+					props.channel.send("**[DEBUG:❌] No url provided**");
+			});
+
+			if (url === undefined) {
+				connection.destroy();
+				throw new DiscordBotError("No url provided");
+			}
+
 			audio_manager.on('onTick', async ({ byte }) => {
 				connection.playOpusPacket(byte);
 			})
-			audio_manager.addToQueue("https://www.youtube.com/watch?v=gGdGFtwCNBE");
+			audio_manager.addToQueue(url);
 		} catch (e) {
 			throw new DiscordBotError(e.message);
 		}

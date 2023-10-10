@@ -14,3 +14,7 @@ export default function debugPrint(...args: any[]) {
 		console.log(...args);
 }
 
+export function debugExecute(func: Function) {
+	if (isDebug)
+		func();
+}
