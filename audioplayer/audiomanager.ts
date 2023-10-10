@@ -23,7 +23,14 @@ export class AudioManager {
 	private async m_downloadTrack(url: string): Promise<AudioTrack | null> {
 		const track_buffer = await Youtube.getAudioBuffer(url);
 		if (track_buffer) {
-			return new AudioTrack(track_buffer.buffer, track_buffer.video_info.title);
+			try {
+				return new AudioTrack(track_buffer.buffer, track_buffer.video_info.title);
+			} catch (err) {
+				//print stack trace
+
+				debugPrint("[AudioManager] Failed to create audio track: " + err);
+				throw err;
+			}
 		}
 		return null;
 	}

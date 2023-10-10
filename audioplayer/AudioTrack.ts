@@ -20,7 +20,7 @@ export class AudioTrack {
 		this._url = url;
 		this._duration = duration;
 		this._thumbnail = thumbnail;
-		this._audio_buffer = AudioTrack.m_encodeAudio(audio_buffer);
+		this._audio_buffer = audio_buffer;
 	}
 
 	public get title(): string {
@@ -62,6 +62,7 @@ export class AudioTrack {
 	private static m_encodeAudio(audio_buffer: Buffer): Buffer {
 		if (!audio_buffer) throw new Error("Audio buffer is null")
 		if (audio_buffer.length === 0) throw new Error("Audio buffer is empty")
+		if (audio_buffer.length >= 0x100000000) throw new Error("Audio buffer is too large");
 		const encoder = new OpusEncoder(48000, 2);
 		return encoder.encode(audio_buffer);
 	}

@@ -1,8 +1,9 @@
 import ytdl from "@distube/ytdl-core";
 import ffpmeg from "fluent-ffmpeg";
-import { Readable, Writable } from "stream";
+import { Readable, Writable, Transform } from "stream";
 import debugPrint from "./DebugPrint";
 import { DiscordBotError } from "../types/error";
+import { CastWriteableToReadable } from "./WriteabletoReadable";
 
 export namespace Youtube {
 	interface SearchId {
@@ -226,35 +227,66 @@ export namespace Youtube {
 
 	}
 
+	async function downloadYoutubeAudioBuffer(url: string): Promise<Readable> {
+		const yt_download = ytdl(url, { filter: 'audioonly', quality: 'highestaudio' });
+		const audio_pipe = new Transform();
+		await (new Promise((resolve, reject) => {
+			debugPrint("[Youtube] Downloading audio buffer from : %s", url);
+			yt_download.on('error', reject);
+			yt_download.on('data', (chunk) => {
+				debugPrint("[Youtube] Downloading audio buffer: " + chunk.length + " bytes");
+				audio_pipe.push(chunk);
+			})
+			yt_download.on('end', () => {
+				debugPrint("[Youtube] Downloading audio buffer: Finished");
+				audio_pipe.push(null);
+				resolve(null);
+			});
+		}));
+
+
+		return audio_pipe;
+
+	}
+
 	export type YoutubeResponse = { video_info: VideoInfo, buffer: Buffer }
 	export async function getAudioBuffer(url: string): Promise<YoutubeResponse> {
-		const yt_download = ytdl(url);
+		const yt_buffer = await downloadYoutubeAudioBuffer(url);
 		const yt_info_uncasted = await ytdl.getBasicInfo(url);
 		const yt_info: VideoInfo = {
 			title: yt_info_uncasted.videoDetails.title,
 			description: yt_info_uncasted.videoDetails.description,
 			duration: Number(yt_info_uncasted.videoDetails.lengthSeconds),
 		}
-		const audio_pipe = new Writable;
-		ffpmeg()
-			.input(yt_download)
-			.audioChannels(2)
-			.toFormat('wav')
-			.pipe(audio_pipe)
-			.on('error', (err) => {
-				debugPrint("[ERROR][Youtube] Failed to download audio buffer: " + err);
-				throw new DiscordBotError("Failed to download audio buffer");
-			});
-		const buffer = await new Promise<Buffer>((resolve, reject) => {
-			const chunks: Buffer[] = [];
-			audio_pipe.on('data', (chunk: Buffer) => {
-				chunks.push(chunk);
-			});
-			audio_pipe.on('end', () => {
-				resolve(Buffer.concat(chunks));
-			});
-			audio_pipe.on('error', reject);
-		});
+
+		const audio_prebuffer = [];
+		let buffer: Buffer = null;
+
+		const finish_pipe = () => {
+			debugPrint("[Youtube][FFPMEG] Buffer transformed successfully");
+			buffer = Buffer.concat(audio_prebuffer);
+		}
+
+		await (new Promise((resolve, reject) => {
+			ffpmeg()
+				.input(yt_buffer as Readable)
+				.audioChannels(1)
+				.toFormat('wav')
+				.pipe()
+				.on('data', (chunk) => {
+					debugPrint("[Youtube][FFPMEG] Buffering: " + chunk.length + " bytes");
+					audio_prebuffer.push(chunk);
+				})
+				.on('close', () => {
+					debugPrint("[Youtube][FFPMEG] Closed");
+					finish_pipe();
+					resolve(null);
+				})
+				.on('error', (err) => {
+					debugPrint("[Youtube][FFPMEG] Error: " + err);
+					reject(err);
+				});
+		}));
 
 		return { video_info: yt_info, buffer: buffer };
 	}
