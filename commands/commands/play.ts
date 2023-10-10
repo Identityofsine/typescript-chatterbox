@@ -32,6 +32,6 @@ export const play = new Command<Message, void>('play', 'Play a song', [],
 		audio_manager.on('onTick', async ({ byte }: { byte: Buffer }) => {
 			connection.playOpusPacket(byte);
 		});
-		audio_manager.addToQueue("https://www.youtube.com/watch?v=5qap5aO4i9A");
+		audio_manager.addToQueue("https://www.youtube.com/watch?v=Wj8pZ1wTKB8");
 
 	});

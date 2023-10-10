@@ -2,6 +2,8 @@ import { Guild } from "discord.js";
 import { AudioTrack, AudioTrackEvents } from "./AudioTrack";
 import { DiscordBotError } from "../types/error";
 import { AsyncFunction } from "../types/asyncfunction";
+import { Youtube } from "../util/Youtube";
+import debugPrint from "../util/DebugPrint";
 
 export class AudioManager {
 	private _guild: Guild;
@@ -19,6 +21,11 @@ export class AudioManager {
 	}
 
 	private m_downloadTrack(url: string): AudioTrack | null {
+		Youtube.getAudioBuffer(url, ({ video_info, buffer }: Youtube.YoutubeResponse) => {
+			debugPrint(`Downloaded ${video_info.title} from ${url}`);
+		}).catch((err) => {
+			throw new DiscordBotError("Failed to download audio buffer");
+		});
 		return null;
 	}
 

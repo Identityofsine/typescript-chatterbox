@@ -12,6 +12,9 @@ export class AudioTrack {
 	private _is_playing: boolean = false;
 	private _audio_buffer: Buffer;
 
+	/**
+	 * @param audio_buffer The audio buffer to play, this must be in PCM format
+	 */
 	constructor(audio_buffer: Buffer, title?: string, url?: string, duration?: number, thumbnail?: string) {
 		this._title = title;
 		this._url = url;
@@ -57,6 +60,8 @@ export class AudioTrack {
 	}
 
 	private static m_encodeAudio(audio_buffer: Buffer): Buffer {
+		if (!audio_buffer) throw new Error("Audio buffer is null")
+		if (audio_buffer.length === 0) throw new Error("Audio buffer is empty")
 		const encoder = new OpusEncoder(48000, 2);
 		return encoder.encode(audio_buffer);
 	}
@@ -64,13 +69,9 @@ export class AudioTrack {
 	//play through the track opec and call the onTick event
 	private async m_onTick() {
 		//start track loop, this should progress through the track at the right speed
-		for (let i = 0; i < this._audio_buffer.length; i++) {
-			if (!this._is_playing) break;
-			const event_param = this._audio_buffer[i];
-			this._events.get('onTick').map((event: AsyncFunction<{ byte: number }, void>) => {
-				event({ byte: event_param });
-			});
-		}
+		this._events.get('onTick').map((event: AsyncFunction<{ byte: Buffer }, void>) => {
+			event({ byte: this._audio_buffer });
+		});
 	}
 
 }
