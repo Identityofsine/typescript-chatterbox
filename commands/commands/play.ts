@@ -32,8 +32,9 @@ export const play = new Command<Message, void>('play', 'Play a song', [],
 		//#region audio handling
 		try {
 			audio_manager.on('onTick', async ({ byte }: { byte: Buffer }) => {
-				debugPrint("[DEBUG: play] Trying to Play OpusPacket");
-				connection.playOpusPacket(byte);
+				debugPrint("[Play] Playing audio: ", byte);
+				connection.prepareAudioPacket(byte);
+				connection.dispatchAudio();
 			});
 			audio_manager.addToQueue("https://www.youtube.com/watch?v=Wj8pZ1wTKB8");
 		} catch (e) {
