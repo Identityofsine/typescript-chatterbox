@@ -11,11 +11,8 @@ export const play = new Command<Message, void>('play', 'Play a song', [],
 		const member = GetMember(user, guild);
 		const audio_manager = AudioInstance.getInstance().getAudioManager(guild);
 		const voice_channel = member.voice.channel;
-		if (voice_channel) {
 
-		} else {
-			throw new DiscordBotError("You must be in a voice channel to use this command.")
-		}
+		if (!voice_channel) throw new DiscordBotError("You must be in a voice channel to use this command");
 		//#region connection verifyier
 		let connection = getVoiceConnection(guild.id);
 		if (!connection) {
@@ -32,8 +29,9 @@ export const play = new Command<Message, void>('play', 'Play a song', [],
 			});
 		}
 		//#region audio handling
+		audio_manager.on('onTick', async ({ byte }: { byte: Buffer }) => {
+			connection.playOpusPacket(byte);
+		});
 		audio_manager.addToQueue("https://www.youtube.com/watch?v=5qap5aO4i9A");
-
-
 
 	});

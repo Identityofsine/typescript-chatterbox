@@ -8,7 +8,7 @@ export class AudioTrack {
 	private _url: string;
 	private _duration: number;
 	private _thumbnail: string;
-	private _events: Map<String, AsyncFunction<{ byte: number }, void>[]> = new Map<String, AsyncFunction<{ byte: number }, void>[]>();
+	private _events: Map<String, AsyncFunction<{ byte: Buffer }, void>[]> = new Map<String, AsyncFunction<{ byte: Buffer }, void>[]>();
 	private _is_playing: boolean = false;
 	private _audio_buffer: Buffer;
 
@@ -36,6 +36,12 @@ export class AudioTrack {
 		return this._thumbnail;
 	}
 
+	public on(event: AudioTrackEvents, func: AsyncFunction<{ byte: Buffer }, void>) {
+		if (!this._events.has(event)) {
+			this._events.set(event, []);
+		}
+		this._events.get(event).push(func);
+	}
 
 	public start(): void {
 		if (this._is_playing) {
