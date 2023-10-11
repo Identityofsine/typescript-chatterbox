@@ -1,6 +1,6 @@
 import { OpusEncoder } from "@discordjs/opus";
 import { AsyncFunction } from "../types/asyncfunction";
-import debugPrint from "../util/DebugPrint";
+import debugPrint, { debugExecute } from "../util/DebugPrint";
 import { PCM } from "../util/PCM";
 
 export type AudioTrackEvents = 'onTick' | 'onEnd' | 'onStart' | 'onReady';
@@ -130,8 +130,11 @@ export class AudioTrack {
 				event({ byte: packet });
 			});
 			packet_index += 1;
-			const delta_time = last_packet_time.delta - last_timeout;
-			debugPrint("[AudioTrack Tick] Waiting %d ms", delta_time);
+			const delta_time = (last_packet_time.delta - last_timeout);
+			debugExecute(() => {
+				if (delta_time < 0)
+					debugPrint("[AudioTrack Tick] Delta Time: %d ms (LATE) (SKIPPING IMMINENT)", delta_time);
+			})
 			last_packet_time.reset()
 			return delta_time;
 		}
@@ -141,15 +144,23 @@ export class AudioTrack {
 			const last_packet = await send_packet();
 			await (new Promise((resolve) => {
 				const reducer = last_packet;
-				const timeout = packet_interval - reducer;
+				const timeout = (packet_interval) - reducer;
+				last_timeout = timeout;
+
+				if (last_timeout <= 0) {
+					debugPrint("[AudioTrack Tick][WARNING LESSER] Delta Time: %d ms (LATE) (SKIPPING IMMINENT)", last_timeout);
+					last_timeout = last_packet;
+				} else if (last_timeout > 20) {
+					debugPrint("[AudioTrack Tick][WARNING GREATER] Delta Time: %d ms (LATE) (SKIPPING POSSIBLE)", last_timeout);
+					last_timeout = packet_interval;
+				}
 
 				setTimeout(() => {
 					resolve(null);
-				}, timeout);
+				}, last_timeout);
 
-				last_timeout = timeout;
 
-				debugPrint("[AudioTrack Tick] Next Base Interval: %d ms", timeout)
+				//debugPrint("[AudioTrack Tick] Next Base Interval: %d ms", last_timeout)
 			}));
 		}
 		this.m_callEnd();

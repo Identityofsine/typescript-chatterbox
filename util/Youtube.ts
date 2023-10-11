@@ -257,29 +257,30 @@ export namespace Youtube {
 			duration: Number(yt_info_uncasted.videoDetails.lengthSeconds),
 		}
 
-		const audio_prebuffer = [];
-		let buffer: Buffer = null;
-
 		const finish_pipe = () => {
 			debugPrint("[Youtube][FFPMEG] Buffer transformed successfully");
-			buffer = Buffer.concat(audio_prebuffer);
 		}
 
+		const ffpmeg_output = new Transform({
+			transform(chunk, encoding, callback) {
+				debugPrint("[Youtube] Buffer transformed: " + chunk.length + " bytes");
+				this.push(chunk);
+				callback();
+			}
+		}
+		);
+		const temp_pipe = new Writable({
+			write(chunk, encoding, callback) {
+				debugPrint("[Youtube][FFPMEG] Buffer received: " + chunk.length + " bytes");
+				ffpmeg_output.push(chunk);
+				callback();
+			},
+			final(callback) {
+				callback();
+			}
+		});
+
 		await (new Promise((resolve, reject) => {
-
-			const temp_pipe = new Writable({
-				write(chunk, encoding, callback) {
-					debugPrint("[Youtube][FFPMEG] Buffering: " + chunk.length + " bytes");
-					audio_prebuffer.push(chunk);
-					callback();
-				},
-				final(callback) {
-					finish_pipe();
-					resolve(null)
-					callback();
-				}
-			})
-
 			ffpmeg()
 				.input(yt_buffer as Readable)
 				.audioChannels(2)
@@ -296,6 +297,6 @@ export namespace Youtube {
 				.pipe(temp_pipe, { end: true })
 		}));
 
-		return { video_info: yt_info, buffer: buffer };
+		return { video_info: yt_info, buffer: ffpmeg_output.read() };
 	}
 }
