@@ -1,5 +1,5 @@
 import { Guild } from "discord.js";
-import { AudioTrack, AudioTrackEvents, AudioTrackHusk } from "./AudioTrack";
+import { AAudioTrack, AudioTrack, AudioTrackEvents, AudioTrackHusk } from "./AudioTrack";
 import { DiscordBotError } from "../types/error";
 import { AsyncFunction } from "../types/asyncfunction";
 import { Youtube } from "../util/Youtube";
@@ -8,7 +8,9 @@ import debugPrint, { debugExecute } from "../util/DebugPrint";
 export type AudioManagerEvents = 'onQueueEnd' | 'onQueueAdd' | 'onQueuePop' | AudioTrackEvents;
 
 export interface AudioTrackEventsMap {
-	'onQueueEnd': { track: AudioTrack };
+	'onQueueEnd': { track: AAudioTrack };
+	'onQueueAdd': { track: AAudioTrack };
+	'onQueuePop': { track: AAudioTrack };
 	'onTick': { byte: Buffer };
 	'onEnd': { track: AudioTrack };
 	'onStart': null;
@@ -53,6 +55,7 @@ export class AudioManager {
 			const track = this._queue.shift().cast();
 			this._current_track = track;
 			this._current_track.start();
+			this.call('onQueuePop', { track: this._current_track });
 		} else {
 			this._is_playing = false;
 			this.call('onQueueEnd', { track: this._current_track });
@@ -75,6 +78,7 @@ export class AudioManager {
 		if (!this._current_track) throw new DiscordBotError("No track is playing");
 		this._current_track.stop();
 		this._is_playing = false;
+		this.call('onEnd', { track: this._current_track });
 	}
 
 	private call(event: AudioManagerEvents, data: AudioTrackEventsMap[AudioTrackEventsMapKeys]) {
@@ -91,9 +95,8 @@ export class AudioManager {
 	}
 
 	public async stopQueue() {
-		if (this._current_track) this._current_track.stop()
+		this.stop();
 		this._queue = [];
-		this._is_playing = false;
 	}
 
 	public async addToQueue(song: string) {
@@ -113,8 +116,10 @@ export class AudioManager {
 			this._current_track = track.cast();
 			this._current_track.start();
 			this._is_playing = true;
+			this.call('onStart', null);
 		} else {
-			debugPrint("info", "[AudioManager] Added Track");
+			debugPrint("info", `[AudioManager] Added Track`);
+			this.call('onQueueAdd', { track: track });
 			this._queue.push(track);
 		}
 	}

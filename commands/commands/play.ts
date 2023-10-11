@@ -48,13 +48,19 @@ export const play = new Command<Message, void>('play', 'Play a song', [],
 			}
 
 			if (audio_manager.isPlaying) {
-				props.channel.send('Added to queue');
 				audio_manager.addToQueue(url);
 				return;
 			} else {
+
 				audio_manager.on('onTick', async ({ byte }: { byte: Buffer }) => {
 					connection.playOpusPacket(byte);
 				})
+				audio_manager.on('onQueueAdd', async ({ track }: { track: AudioTrack }) => {
+					props.channel.send("**ADDED : *" + track.title + "*.**")
+				});
+				audio_manager.on('onQueuePop', async ({ track }: { track: AudioTrack }) => {
+					props.channel.send("**NOW PLAYING : *" + track.title + "*.**");
+				});
 				audio_manager.on('onQueueEnd', async ({ track }: { track: AudioTrack }) => {
 					connection.disconnect();
 					debugExecute(() => {

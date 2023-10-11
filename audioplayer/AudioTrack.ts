@@ -6,7 +6,7 @@ import { PCM } from "../util/PCM";
 
 export type AudioTrackEvents = 'onTick' | 'onEnd' | 'onStart' | 'onReady';
 
-abstract class AAudioTrack {
+export abstract class AAudioTrack {
 	protected _title: string;
 	protected _url: string;
 	protected _duration: number;
@@ -21,6 +21,22 @@ abstract class AAudioTrack {
 		this._duration = duration;
 		this._thumbnail = thumbnail;
 		this._audio_buffer = audio_buffer;
+	}
+
+	public get title(): string {
+		return this._title;
+	}
+	public get url(): string {
+		return this._url;
+	}
+	public get duration(): number {
+		return this._duration;
+	}
+	public get thumbnail(): string {
+		return this._thumbnail;
+	}
+	public get pcm(): Buffer {
+		return this._audio_buffer;
 	}
 }
 
@@ -60,26 +76,6 @@ export class AudioTrack extends AAudioTrack {
 	constructor(audio_buffer: Buffer, title?: string, url?: string, duration?: number, thumbnail?: string) {
 		super(audio_buffer, title, url, duration, thumbnail);
 		[this._audio_stream_opec, this._audio_opec_packet_sizes] = AudioTrack.m_encodeAudio(audio_buffer);
-	}
-
-	public get title(): string {
-		return this._title;
-	}
-
-	public get url(): string {
-		return this._url;
-	}
-
-	public get duration(): number {
-		return this._duration;
-	}
-
-	public get thumbnail(): string {
-		return this._thumbnail;
-	}
-
-	public get pcm(): Buffer {
-		return this._audio_buffer;
 	}
 
 	public get opusPackets(): Buffer {
@@ -194,8 +190,6 @@ export class AudioTrack extends AAudioTrack {
 				setTimeout(() => {
 					resolve(null);
 				}, last_timeout);
-
-
 				//debugPrint("[AudioTrack Tick] Next Base Interval: %d ms", last_timeout)
 			}));
 		}
