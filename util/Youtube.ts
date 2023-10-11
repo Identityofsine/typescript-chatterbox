@@ -249,54 +249,64 @@ export namespace Youtube {
 
 	export type YoutubeResponse = { video_info: VideoInfo, buffer: Buffer }
 	export async function getAudioBuffer(url: string): Promise<YoutubeResponse> {
-		const yt_buffer = await downloadYoutubeAudioBuffer(url);
-		const yt_info_uncasted = await ytdl.getBasicInfo(url);
-		const yt_info: VideoInfo = {
-			title: yt_info_uncasted.videoDetails.title,
-			description: yt_info_uncasted.videoDetails.description,
-			duration: Number(yt_info_uncasted.videoDetails.lengthSeconds),
-		}
 
-		const finish_pipe = () => {
-			debugPrint("info", "[Youtube][FFPMEG] Buffer transformed successfully");
-		}
-
-		const ffpmeg_output = new Transform({
-			transform(chunk, encoding, callback) {
-				debugPrint("info", "[Youtube] Buffer transformed: " + chunk.length + " bytes");
-				this.push(chunk);
-				callback();
+		try {
+			const yt_buffer = await downloadYoutubeAudioBuffer(url);
+			const yt_info_uncasted = await ytdl.getBasicInfo(url);
+			const yt_info: VideoInfo = {
+				title: yt_info_uncasted.videoDetails.title,
+				description: yt_info_uncasted.videoDetails.description,
+				duration: Number(yt_info_uncasted.videoDetails.lengthSeconds),
 			}
-		}
-		);
-		const temp_pipe = new Writable({
-			write(chunk, encoding, callback) {
-				debugPrint("info", "[Youtube][FFPMEG] Buffer received: " + chunk.length + " bytes");
-				ffpmeg_output.push(chunk);
-				callback();
-			},
-			final(callback) {
-				callback();
+
+
+			const finish_pipe = () => {
+				debugPrint("info", "[Youtube][FFPMEG] Buffer transformed successfully");
 			}
-		});
 
-		await (new Promise((resolve, reject) => {
-			ffpmeg()
-				.input(yt_buffer as Readable)
-				.audioChannels(2)
-				.toFormat('wav')
-				.on('end', () => {
-					debugPrint("info", "[Youtube][FFPMEG] END");
-					finish_pipe();
-					resolve(null);
-				})
-				.on('error', (err) => {
-					debugPrint("error", "[Youtube][FFPMEG] Error: " + err);
-					reject(err);
-				})
-				.pipe(temp_pipe, { end: true })
-		}));
+			const ffpmeg_output = new Transform({
+				transform(chunk, encoding, callback) {
+					debugPrint("info", "[Youtube] Buffer transformed: " + chunk.length + " bytes");
+					this.push(chunk);
+					callback();
+				}
+			}
+			);
+			const temp_pipe = new Writable({
+				write(chunk, encoding, callback) {
+					debugPrint("info", "[Youtube][FFPMEG] Buffer received: " + chunk.length + " bytes");
+					ffpmeg_output.push(chunk);
+					callback();
+				},
+				final(callback) {
+					callback();
+				}
+			});
 
-		return { video_info: yt_info, buffer: ffpmeg_output.read() };
+			await (new Promise((resolve, reject) => {
+				ffpmeg()
+					.input(yt_buffer as Readable)
+					.audioChannels(2)
+					.toFormat('wav')
+					.on('end', () => {
+						debugPrint("info", "[Youtube][FFPMEG] END");
+						finish_pipe();
+						resolve(null);
+					})
+					.on('error', (err) => {
+						debugPrint("error", "[Youtube][FFPMEG] Error: " + err);
+						reject(err);
+					})
+					.pipe(temp_pipe, { end: true })
+			}));
+
+			return { video_info: yt_info, buffer: ffpmeg_output.read() };
+
+		}
+		catch (err) {
+			debugPrint("error", "[Youtube] Error: " + err);
+			throw err;
+		}
+
 	}
 }

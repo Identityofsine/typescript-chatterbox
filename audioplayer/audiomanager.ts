@@ -25,6 +25,7 @@ export class AudioManager {
 	private _queue: AudioTrackHusk[] = [];
 	private _is_playing: boolean = false;
 	private _current_track: AudioTrack;
+	private _is_loading_track: boolean = false;
 	private _events: Map<AudioManagerEvents, AsyncFunction<AudioTrackEventsMap[AudioTrackEventsMapKeys], void>[]> = new Map<AudioManagerEvents, AsyncFunction<any, void>[]>();
 
 
@@ -37,7 +38,9 @@ export class AudioManager {
 	}
 
 	private async m_downloadTrack(url: string): Promise<AudioTrackHusk | null> {
+		this._is_loading_track = true;
 		const track_buffer = await Youtube.getAudioBuffer(url);
+		this._is_loading_track = false;
 		if (track_buffer) {
 			try {
 				const track = new AudioTrackHusk(track_buffer.buffer, track_buffer.video_info.title);
@@ -84,8 +87,6 @@ export class AudioManager {
 	public skip(): boolean {
 		if (!this._current_track) return false;
 		this._current_track.stop();
-		this.call('onEnd', { track: this._current_track });
-		this.m_pollQueue();
 		return true;
 	}
 
@@ -107,6 +108,10 @@ export class AudioManager {
 		this._queue = [];
 	}
 
+	private m_shouldPlayTrackNow(): boolean {
+		return this._queue.length === 0 && this._is_playing === false;
+	}
+
 	public async addToQueue(song: string) {
 		//TODO: add song to queue
 		const track = await this.m_downloadTrack(song);
@@ -119,7 +124,7 @@ export class AudioManager {
 			this.m_pollQueue();
 		});
 
-		if (this._queue.length === 0 && this._is_playing === false) {
+		if (this.m_shouldPlayTrackNow() && !this._is_loading_track) {
 			debugPrint("info", "[AudioManager] Playing track");
 			this._current_track = track.cast();
 			this._current_track.start();
