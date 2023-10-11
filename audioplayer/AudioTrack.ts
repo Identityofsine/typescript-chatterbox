@@ -68,6 +68,7 @@ export class AudioTrack {
 
 	public stop(): void {
 		this._is_playing = false;
+		this.m_callEnd();
 	}
 
 	private m_callEnd() {
@@ -91,18 +92,18 @@ export class AudioTrack {
 			try {
 				const encoded_chunk = encoder.encode(chunk);
 				encoded_chunk.copy(opus_buffer, opus_index - 1);
-				debugPrint("[AudioTrack] Encoded audio chunk: " + encoded_chunk.length + " bytes (" + chunk.length + " bytes raw)");
+				debugPrint("info", "[AudioTrack] Encoded audio chunk: " + encoded_chunk.length + " bytes (" + chunk.length + " bytes raw)");
 				opus_index += encoded_chunk.length;
 				packet_sizes.push(encoded_chunk.length);
 			} catch (err) {
-				debugPrint("[AudioTrack] Failed to encode audio chunk: " + err);
+				debugPrint("warn", "[AudioTrack] Failed to encode audio chunk: " + err);
 			}
 		}
 
 
-		debugPrint("[AudioTrack] Encoded audio buffer: " + opus_buffer.length + " bytes");
-		debugPrint("[AudioTrack] Encoded audio buffer: ", opus_buffer);
-		debugPrint("[AudioTrack] Encoded audio buffer packets: ", packet_sizes)
+		debugPrint("info", "[AudioTrack] Encoded audio buffer: " + opus_buffer.length + " bytes");
+		debugPrint("info", "[AudioTrack] Encoded audio buffer: ", opus_buffer);
+		debugPrint("info", "[AudioTrack] Encoded audio buffer packets: ", packet_sizes)
 
 
 		return [opus_buffer, packet_sizes];
@@ -120,6 +121,7 @@ export class AudioTrack {
 		const send_packet = async () => {
 			const packet_size = this._audio_opec_packet_sizes[packet_index];
 			if (packet_size === undefined) {
+				debugPrint("info", "[AudioTrack Tick] End of track");
 				this.stop();
 				return 0;
 			}
@@ -133,7 +135,7 @@ export class AudioTrack {
 			const delta_time = (last_packet_time.delta - last_timeout);
 			debugExecute(() => {
 				if (delta_time < 0)
-					debugPrint("[AudioTrack Tick] Delta Time: %d ms (LATE) (SKIPPING IMMINENT)", delta_time);
+					debugPrint("warn", "[AudioTrack Tick] Delta Time: %d ms (LATE)", delta_time);
 			})
 			last_packet_time.reset()
 			return delta_time;
@@ -142,16 +144,20 @@ export class AudioTrack {
 		this._is_playing = true;
 		while (this._is_playing) {
 			const last_packet = await send_packet();
-			await (new Promise((resolve) => {
+			await (new Promise(async (resolve) => {
 				const reducer = last_packet;
 				const timeout = (packet_interval) - reducer;
 				last_timeout = timeout;
 
 				if (last_timeout <= 0) {
-					debugPrint("[AudioTrack Tick][WARNING LESSER] Delta Time: %d ms (LATE) (SKIPPING IMMINENT)", last_timeout);
-					last_timeout = last_packet;
+					debugPrint("warn", "[AudioTrack Tick][WARNING LESSER] Delta Time: %d ms (LATE) (SKIPPING IMMINENT)", last_timeout);
+					while (last_timeout <= 0) {
+						debugPrint("warn", "[AudioTrack Tick] Tick is too late, trying to save face...")
+						last_timeout += packet_interval;
+						await send_packet();
+					}
 				} else if (last_timeout > 20) {
-					debugPrint("[AudioTrack Tick][WARNING GREATER] Delta Time: %d ms (LATE) (SKIPPING POSSIBLE)", last_timeout);
+					debugPrint("warn", "[AudioTrack Tick][WARNING GREATER] Delta Time: %d ms (LATE) (SKIPPING POSSIBLE)", last_timeout);
 					last_timeout = packet_interval;
 				}
 
@@ -163,9 +169,6 @@ export class AudioTrack {
 				//debugPrint("[AudioTrack Tick] Next Base Interval: %d ms", last_timeout)
 			}));
 		}
-		this.m_callEnd();
-
-
 	}
 
 }

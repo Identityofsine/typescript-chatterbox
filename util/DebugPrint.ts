@@ -9,9 +9,17 @@ if (args.d) {
 
 export { isDebug };
 
-export default function debugPrint(...args: any[]) {
-	if (isDebug)
+export type DebugTypes = "info" | "warn" | "error" | "log";
+
+export default function debugPrint(type: DebugTypes = "log", ...args: any[]) {
+	const assignEmoji = (type: DebugTypes) => {
+		return type === "info" ? "i" : type === "warn" ? "⚠️" : type === "error" ? "❌" : "";
+	}
+
+	if (isDebug) {
+		console.log(`[${assignEmoji(type)}][DEBUG]`);
 		console.log(...args);
+	}
 }
 
 export function debugExecute(func: Function) {

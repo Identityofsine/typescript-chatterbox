@@ -229,15 +229,15 @@ export namespace Youtube {
 		const yt_download = ytdl(url, { filter: 'audioonly', quality: 'highestaudio' });
 		const audio_pipe = new Transform();
 		await (new Promise((resolve, reject) => {
-			debugPrint("[Youtube] Downloading audio buffer from : %s", url);
+			debugPrint("info", "[Youtube] Downloading audio buffer from : %s", url);
 			yt_download.on('error', reject);
 			yt_download.on('data', (chunk) => {
-				debugPrint("[Youtube] Downloading audio buffer: " + chunk.length + " bytes");
+				debugPrint("info", "[Youtube] Downloading audio buffer: " + chunk.length + " bytes");
 				audio_pipe.push(chunk);
 				resolve(null);
 			})
 			yt_download.on('end', () => {
-				debugPrint("[Youtube] Downloading audio buffer: Finished");
+				debugPrint("info", "[Youtube] Downloading audio buffer: Finished");
 				audio_pipe.push(null);
 			});
 		}));
@@ -258,12 +258,12 @@ export namespace Youtube {
 		}
 
 		const finish_pipe = () => {
-			debugPrint("[Youtube][FFPMEG] Buffer transformed successfully");
+			debugPrint("info", "[Youtube][FFPMEG] Buffer transformed successfully");
 		}
 
 		const ffpmeg_output = new Transform({
 			transform(chunk, encoding, callback) {
-				debugPrint("[Youtube] Buffer transformed: " + chunk.length + " bytes");
+				debugPrint("info", "[Youtube] Buffer transformed: " + chunk.length + " bytes");
 				this.push(chunk);
 				callback();
 			}
@@ -271,7 +271,7 @@ export namespace Youtube {
 		);
 		const temp_pipe = new Writable({
 			write(chunk, encoding, callback) {
-				debugPrint("[Youtube][FFPMEG] Buffer received: " + chunk.length + " bytes");
+				debugPrint("info", "[Youtube][FFPMEG] Buffer received: " + chunk.length + " bytes");
 				ffpmeg_output.push(chunk);
 				callback();
 			},
@@ -286,12 +286,12 @@ export namespace Youtube {
 				.audioChannels(2)
 				.toFormat('wav')
 				.on('end', () => {
-					debugPrint("[Youtube][FFPMEG] END");
+					debugPrint("info", "[Youtube][FFPMEG] END");
 					finish_pipe();
 					resolve(null);
 				})
 				.on('error', (err) => {
-					debugPrint("[Youtube][FFPMEG] Error: " + err);
+					debugPrint("error", "[Youtube][FFPMEG] Error: " + err);
 					reject(err);
 				})
 				.pipe(temp_pipe, { end: true })

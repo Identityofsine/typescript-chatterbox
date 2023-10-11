@@ -53,6 +53,7 @@ export const play = new Command<Message, void>('play', 'Play a song', [],
 				debugExecute(() => {
 					props.channel.send(`**[DEBUG:ℹ️] I have finished playing ${url} **`);
 				});
+				connection.destroy();
 			});
 			audio_manager.addToQueue(url);
 		} catch (e) {

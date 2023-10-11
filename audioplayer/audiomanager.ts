@@ -30,7 +30,7 @@ export class AudioManager {
 			} catch (err) {
 				//print stack trace
 
-				debugPrint("[AudioManager] Failed to create audio track: " + err);
+				debugPrint("error", "[AudioManager] Failed to create audio track: " + err);
 				throw err;
 			}
 		}

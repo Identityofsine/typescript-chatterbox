@@ -19,7 +19,7 @@ export function ArgumentGrabber<T extends string>(message: Message, args_list: T
 		}
 		arg_list[label] = args[i];
 	}
-	debugPrint("[ArgumentGrabber] Grabbed arguments: " + JSON.stringify(arg_list));
+	debugPrint("info", "[ArgumentGrabber] Grabbed arguments: " + JSON.stringify(arg_list));
 	return arg_list;
 }
 
