@@ -5,7 +5,7 @@ import { AsyncFunction } from "../types/asyncfunction";
 import { Youtube } from "../util/Youtube";
 import debugPrint, { debugExecute } from "../util/DebugPrint";
 
-export type AudioManagerEvents = 'onQueueEnd' | AudioTrackEvents;
+export type AudioManagerEvents = 'onQueueEnd' | 'onQueueAdd' | 'onQueuePop' | AudioTrackEvents;
 
 export interface AudioTrackEventsMap {
 	'onQueueEnd': { track: AudioTrack };
@@ -55,9 +55,7 @@ export class AudioManager {
 			this._current_track.start();
 		} else {
 			this._is_playing = false;
-			this._events.get('onQueueEnd')?.map((event) => {
-				event({ track: this._current_track });
-			});
+			this.call('onQueueEnd', { track: this._current_track });
 		}
 	}
 
@@ -79,6 +77,12 @@ export class AudioManager {
 		this._is_playing = false;
 	}
 
+	private call(event: AudioManagerEvents, data: AudioTrackEventsMap[AudioTrackEventsMapKeys]) {
+		this._events.get(event)?.map((func) => {
+			func(data);
+		});
+	}
+
 	public on(event: AudioManagerEvents, func: AsyncFunction<AudioTrackEventsMap[AudioTrackEventsMapKeys], void>) {
 		if (!this._events.has(event)) {
 			this._events.set(event, []);
@@ -86,19 +90,21 @@ export class AudioManager {
 		this._events.get(event).push(func);
 	}
 
+	public async stopQueue() {
+		if (this._current_track) this._current_track.stop()
+		this._queue = [];
+		this._is_playing = false;
+	}
+
 	public async addToQueue(song: string) {
 		//TODO: add song to queue
 		const track = await this.m_downloadTrack(song);
 		if (!track) throw new DiscordBotError("Failed to download track");
 		track.on('onTick', async (byte: { byte: Buffer }) => {
-			this._events.get('onTick').map((event: AsyncFunction<{ byte: Buffer }, void>) => {
-				event(byte);
-			});
+			this.call('onTick', byte);
 		});
 		track.on('onEnd', async () => {
-			this._events.get('onEnd')?.map((event: AsyncFunction<{ byte: Buffer }, void>) => {
-				event(null);
-			});
+			this.call('onEnd', { track: this._current_track });
 			this.m_pollQueue();
 		});
 
