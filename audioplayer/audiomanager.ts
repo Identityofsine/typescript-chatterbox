@@ -37,6 +37,18 @@ export class AudioManager {
 		return null;
 	}
 
+	private m_pollQueue(): void {
+		if (this._queue.length > 0) {
+			this._current_track = this._queue.shift();
+			this._current_track.start();
+		} else {
+			this._is_playing = false;
+			this._events.get('onQueueEnd')?.map((event: AsyncFunction<{ byte: Buffer }, void>) => {
+				event(null);
+			});
+		}
+	}
+
 	public get guild(): Guild {
 		return this._guild;
 	}
@@ -75,10 +87,16 @@ export class AudioManager {
 			this._events.get('onEnd').map((event: AsyncFunction<{ byte: Buffer }, void>) => {
 				event(null);
 			});
+			this.m_pollQueue();
+			this._current_track = null;
 		});
-		this._current_track = track;
-		track.start();
-		this._queue.push(track);
+		if (this._queue.length === 0) {
+			this._current_track = track;
+			track.start();
+			this._is_playing = true;
+		} else {
+			this._queue.push(track);
+		}
 	}
 
 }

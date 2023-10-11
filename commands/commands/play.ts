@@ -46,16 +46,27 @@ export const play = new Command<Message, void>('play', 'Play a song', [],
 				throw new DiscordBotError("No url provided");
 			}
 
+			if (audio_manager.isPlaying) {
+				props.channel.send('Added to queue');
+				audio_manager.addToQueue(url);
+				return;
+			}
+
 			audio_manager.on('onTick', async ({ byte }) => {
 				connection.playOpusPacket(byte);
 			})
 			audio_manager.on('onEnd', async () => {
+
+			});
+			audio_manager.on('onQueueEnd', async () => {
+				connection.disconnect();
 				debugExecute(() => {
 					props.channel.send(`**[DEBUG:ℹ️] I have finished playing ${url} **`);
 				});
-				connection.destroy();
 			});
+
 			audio_manager.addToQueue(url);
+
 		} catch (e) {
 			throw new DiscordBotError(e.message);
 		}

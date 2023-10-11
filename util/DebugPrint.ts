@@ -17,7 +17,8 @@ export default function debugPrint(type: DebugTypes = "log", ...args: any[]) {
 	}
 
 	if (isDebug) {
-		console.log(`[${assignEmoji(type)}][DEBUG]`);
+		const timestamp = new Date().toLocaleTimeString();
+		console.log(`\n[${timestamp}][${assignEmoji(type)}][DEBUG]`);
 		console.log(...args);
 	}
 }

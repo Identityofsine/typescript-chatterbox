@@ -3,7 +3,7 @@ import { AsyncFunction } from "../types/asyncfunction";
 import debugPrint, { debugExecute } from "../util/DebugPrint";
 import { PCM } from "../util/PCM";
 
-export type AudioTrackEvents = 'onTick' | 'onEnd' | 'onStart' | 'onReady';
+export type AudioTrackEvents = 'onTick' | 'onEnd' | 'onStart' | 'onReady' | 'onQueueEnd';
 
 export class AudioTrack {
 	private _title: string;
