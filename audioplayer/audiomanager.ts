@@ -81,6 +81,14 @@ export class AudioManager {
 		this.call('onEnd', { track: this._current_track });
 	}
 
+	public skip(): boolean {
+		if (!this._current_track) return false;
+		this._current_track.stop();
+		this.call('onEnd', { track: this._current_track });
+		this.m_pollQueue();
+		return true;
+	}
+
 	private call(event: AudioManagerEvents, data: AudioTrackEventsMap[AudioTrackEventsMapKeys]) {
 		this._events.get(event)?.map((func) => {
 			func(data);
