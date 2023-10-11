@@ -1,16 +1,29 @@
 import { Guild } from "discord.js";
-import { AudioTrack, AudioTrackEvents } from "./AudioTrack";
+import { AudioTrack, AudioTrackEvents, AudioTrackHusk } from "./AudioTrack";
 import { DiscordBotError } from "../types/error";
 import { AsyncFunction } from "../types/asyncfunction";
 import { Youtube } from "../util/Youtube";
-import debugPrint from "../util/DebugPrint";
+import debugPrint, { debugExecute } from "../util/DebugPrint";
+
+export type AudioManagerEvents = 'onQueueEnd' | AudioTrackEvents;
+
+export interface AudioTrackEventsMap {
+	'onQueueEnd': { track: AudioTrack };
+	'onTick': { byte: Buffer };
+	'onEnd': { track: AudioTrack };
+	'onStart': null;
+	'onReady': null;
+}
+
+export type AudioTrackEventsMapKeys = keyof AudioTrackEventsMap;
+
 
 export class AudioManager {
 	private _guild: Guild;
-	private _queue: AudioTrack[] = [];
+	private _queue: AudioTrackHusk[] = [];
 	private _is_playing: boolean = false;
 	private _current_track: AudioTrack;
-	private _events: Map<String, AsyncFunction<{ byte: Buffer }, void>[]> = new Map<String, AsyncFunction<{ byte: Buffer }, void>[]>();
+	private _events: Map<AudioManagerEvents, AsyncFunction<AudioTrackEventsMap[AudioTrackEventsMapKeys], void>[]> = new Map<AudioManagerEvents, AsyncFunction<any, void>[]>();
 
 
 	constructor(guild: Guild) {
@@ -21,15 +34,13 @@ export class AudioManager {
 
 	}
 
-	private async m_downloadTrack(url: string): Promise<AudioTrack | null> {
+	private async m_downloadTrack(url: string): Promise<AudioTrackHusk | null> {
 		const track_buffer = await Youtube.getAudioBuffer(url);
 		if (track_buffer) {
 			try {
-				const track = new AudioTrack(track_buffer.buffer, track_buffer.video_info.title);
+				const track = new AudioTrackHusk(track_buffer.buffer, track_buffer.video_info.title);
 				return track;
 			} catch (err) {
-				//print stack trace
-
 				debugPrint("error", "[AudioManager] Failed to create audio track: " + err);
 				throw err;
 			}
@@ -39,12 +50,13 @@ export class AudioManager {
 
 	private m_pollQueue(): void {
 		if (this._queue.length > 0) {
-			this._current_track = this._queue.shift();
+			const track = this._queue.shift().cast();
+			this._current_track = track;
 			this._current_track.start();
 		} else {
 			this._is_playing = false;
-			this._events.get('onQueueEnd')?.map((event: AsyncFunction<{ byte: Buffer }, void>) => {
-				event(null);
+			this._events.get('onQueueEnd')?.map((event) => {
+				event({ track: this._current_track });
 			});
 		}
 	}
@@ -67,7 +79,7 @@ export class AudioManager {
 		this._is_playing = false;
 	}
 
-	public on(event: AudioTrackEvents, func: AsyncFunction<{ byte: Buffer }, void>) {
+	public on(event: AudioManagerEvents, func: AsyncFunction<AudioTrackEventsMap[AudioTrackEventsMapKeys], void>) {
 		if (!this._events.has(event)) {
 			this._events.set(event, []);
 		}
@@ -84,17 +96,19 @@ export class AudioManager {
 			});
 		});
 		track.on('onEnd', async () => {
-			this._events.get('onEnd').map((event: AsyncFunction<{ byte: Buffer }, void>) => {
+			this._events.get('onEnd')?.map((event: AsyncFunction<{ byte: Buffer }, void>) => {
 				event(null);
 			});
 			this.m_pollQueue();
-			this._current_track = null;
 		});
-		if (this._queue.length === 0) {
-			this._current_track = track;
-			track.start();
+
+		if (this._queue.length === 0 && this._is_playing === false) {
+			debugPrint("info", "[AudioManager] Playing track");
+			this._current_track = track.cast();
+			this._current_track.start();
 			this._is_playing = true;
 		} else {
+			debugPrint("info", "[AudioManager] Added Track");
 			this._queue.push(track);
 		}
 	}

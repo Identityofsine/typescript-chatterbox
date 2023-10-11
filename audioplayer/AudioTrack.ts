@@ -1,18 +1,56 @@
 import { OpusEncoder } from "@discordjs/opus";
 import { AsyncFunction } from "../types/asyncfunction";
+import { AudioTrackEventsMap, AudioTrackEventsMapKeys } from "./audiomanager";
 import debugPrint, { debugExecute } from "../util/DebugPrint";
 import { PCM } from "../util/PCM";
 
-export type AudioTrackEvents = 'onTick' | 'onEnd' | 'onStart' | 'onReady' | 'onQueueEnd';
+export type AudioTrackEvents = 'onTick' | 'onEnd' | 'onStart' | 'onReady';
 
-export class AudioTrack {
-	private _title: string;
-	private _url: string;
-	private _duration: number;
-	private _thumbnail: string;
-	private _events: Map<String, AsyncFunction<{ byte: Buffer }, void>[]> = new Map<String, AsyncFunction<{ byte: Buffer }, void>[]>();
+abstract class AAudioTrack {
+	protected _title: string;
+	protected _url: string;
+	protected _duration: number;
+	protected _thumbnail: string;
+	protected _audio_buffer: Buffer;
+	protected readonly _events: Map<AudioTrackEvents, AsyncFunction<AudioTrackEventsMap[AudioTrackEventsMapKeys], void>[]> = new Map<AudioTrackEvents, AsyncFunction<AudioTrackEventsMap[AudioTrackEventsMapKeys], void>[]>();
+	abstract on(event: AudioTrackEvents, func: AsyncFunction<AudioTrackEventsMap[AudioTrackEventsMapKeys], void>): void;
+
+	constructor(audio_buffer: Buffer, title?: string, url?: string, duration?: number, thumbnail?: string) {
+		this._title = title;
+		this._url = url;
+		this._duration = duration;
+		this._thumbnail = thumbnail;
+		this._audio_buffer = audio_buffer;
+	}
+}
+
+export class AudioTrackHusk extends AAudioTrack {
+
+	constructor(audio_buffer: Buffer, title?: string, url?: string, duration?: number, thumbnail?: string) {
+		super(audio_buffer, title, url, duration, thumbnail);
+	}
+
+	public cast(): AudioTrack {
+		const audio_track = new AudioTrack(this._audio_buffer, this._title, this._url, this._duration, this._thumbnail);
+		this._events.forEach((value, key) => {
+			value.forEach((func) => {
+				audio_track.on(key, func);
+			});
+		});
+		return audio_track;
+	}
+
+	public on(event: AudioTrackEvents, func: AsyncFunction<AudioTrackEventsMap[AudioTrackEventsMapKeys], void>) {
+		if (!this._events.has(event)) {
+			this._events.set(event, []);
+		}
+		this._events.get(event).push(func);
+	}
+
+}
+
+export class AudioTrack extends AAudioTrack {
 	private _is_playing: boolean = false;
-	private _audio_buffer: Buffer;
 	private _audio_stream_opec: Buffer;
 	private _audio_opec_packet_sizes: number[] = [];
 
@@ -20,11 +58,7 @@ export class AudioTrack {
 	 * @param audio_buffer The audio buffer to play, this must be in PCM format
 	 */
 	constructor(audio_buffer: Buffer, title?: string, url?: string, duration?: number, thumbnail?: string) {
-		this._title = title;
-		this._url = url;
-		this._duration = duration;
-		this._thumbnail = thumbnail;
-		this._audio_buffer = audio_buffer;
+		super(audio_buffer, title, url, duration, thumbnail);
 		[this._audio_stream_opec, this._audio_opec_packet_sizes] = AudioTrack.m_encodeAudio(audio_buffer);
 	}
 
@@ -72,7 +106,7 @@ export class AudioTrack {
 	}
 
 	private m_callEnd() {
-		this._events.get('onEnd').map((event: AsyncFunction<any, void>) => {
+		this._events.get('onEnd')?.map((event: AsyncFunction<any, void>) => {
 			event(null);
 		});
 	}
@@ -83,9 +117,7 @@ export class AudioTrack {
 		const encoder = new OpusEncoder(48000, 2);
 		const opus_buffer: Buffer = Buffer.alloc(audio_buffer.length / 2);	//allocate buffer for opus encoding);
 		const packet_sizes: number[] = [];
-
 		let opus_index = 1;
-
 
 		for (let i = 0; i < audio_buffer.length; i += MAX_BUFFER_SIZE) {
 			const chunk = audio_buffer.slice(i, i + MAX_BUFFER_SIZE);
@@ -100,11 +132,9 @@ export class AudioTrack {
 			}
 		}
 
-
 		debugPrint("info", "[AudioTrack] Encoded audio buffer: " + opus_buffer.length + " bytes");
 		debugPrint("info", "[AudioTrack] Encoded audio buffer: ", opus_buffer);
 		debugPrint("info", "[AudioTrack] Encoded audio buffer packets: ", packet_sizes)
-
 
 		return [opus_buffer, packet_sizes];
 	}

@@ -6,6 +6,7 @@ import { DiscordBotError } from "../../types/error";
 import { AudioPlayer, AudioResource, getVoiceConnection, joinVoiceChannel } from "@discordjs/voice";
 import debugPrint, { debugExecute } from "../../util/DebugPrint";
 import { ArgumentGrabber } from "../arguments/arguments";
+import { AudioTrack } from "../../audioplayer/AudioTrack";
 
 export const play = new Command<Message, void>('play', 'Play a song', [],
 	async ({ props, guild }) => {
@@ -50,20 +51,17 @@ export const play = new Command<Message, void>('play', 'Play a song', [],
 				props.channel.send('Added to queue');
 				audio_manager.addToQueue(url);
 				return;
-			}
-
-			audio_manager.on('onTick', async ({ byte }) => {
-				connection.playOpusPacket(byte);
-			})
-			audio_manager.on('onEnd', async () => {
-
-			});
-			audio_manager.on('onQueueEnd', async () => {
-				connection.disconnect();
-				debugExecute(() => {
-					props.channel.send(`**[DEBUG:ℹ️] I have finished playing ${url} **`);
+			} else {
+				audio_manager.on('onTick', async ({ byte }: { byte: Buffer }) => {
+					connection.playOpusPacket(byte);
+				})
+				audio_manager.on('onQueueEnd', async ({ track }: { track: AudioTrack }) => {
+					connection.disconnect();
+					debugExecute(() => {
+						props.channel.send(`**[DEBUG:ℹ️] I have finished playing ${track.title} **`);
+					});
 				});
-			});
+			}
 
 			audio_manager.addToQueue(url);
 
