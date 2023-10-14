@@ -73,6 +73,10 @@ export class AudioManager {
 		return this._is_playing;
 	}
 
+	public get queue(): Array<AudioTrackHusk> {
+		return this._queue;
+	}
+
 	public isQueueEmpty(): boolean {
 		return this._queue.length === 0;
 	}
