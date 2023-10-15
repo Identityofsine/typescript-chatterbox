@@ -1,5 +1,5 @@
 import { Message } from "discord.js";
-import debugPrint from "../util/DebugPrint";
+import debugPrint, { debugExecute } from "../util/DebugPrint";
 import { commands } from "./commands";
 // Purpose: Provides a middleware function for the command handler.
 
@@ -14,12 +14,20 @@ export default function prefix_middleware(message: Message) {
 		const command = commands.find(command => command.name === name);
 		if (command) {
 			debugPrint("info", "[DEBUG] Command found \"%s\", executing callback", command.name);
-			command.callback({ props: message, guild: message.guild }).catch((e: Error) => {
-				debugPrint("error", "[ERROR:%s]", command.name, e.message);
-				message.reply("Error executing command.");
-				message.react("❌");
-
-			});
+			try {
+				command.callback({ props: message, guild: message.guild }).catch((e: Error) => {
+					debugPrint("error", "[ERROR:%s]", command.name, e.message);
+					debugExecute(() => {
+						message.reply("Error executing command.");
+						message.react("❌");
+					})
+				});
+			} catch (e) {
+				debugExecute(() => {
+					message.reply("Error executing command: " + e.message);
+					message.react("❌");
+				})
+			}
 		}
 
 		message.react("✅");
