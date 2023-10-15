@@ -52,7 +52,7 @@ export class AudioManager {
 		this._is_loading_track = false;
 		if (track_buffer) {
 			try {
-				const track = this.m_audioTrackHuskFactory(track_buffer, await Youtube.getYoutubeVideoTitle(url));
+				const track = this.m_audioTrackHuskFactory(track_buffer.buffer, track_buffer.video_info.title);
 				return track;
 			} catch (err) {
 				debugPrint("error", "[AudioManager] Failed to create audio track: " + err);
