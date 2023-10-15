@@ -23,6 +23,7 @@ export default function prefix_middleware(message: Message) {
 					})
 				});
 			} catch (e) {
+				debugPrint("error", `[ERROR:${e.message}]`);
 				debugExecute(() => {
 					message.reply("Error executing command: " + e.message);
 					message.react("❌");
