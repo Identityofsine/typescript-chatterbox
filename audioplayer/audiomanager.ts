@@ -5,7 +5,9 @@ import { AsyncFunction } from "../types/asyncfunction";
 import { Youtube } from "../util/Youtube";
 import debugPrint, { debugExecute } from "../util/DebugPrint";
 
-export type AudioManagerEvents = 'onQueueEnd' | 'onQueueAdd' | 'onQueuePop' | 'onSuccessSubmittion' | AudioTrackEvents;
+export type _AudioManagerEvents = 'onQueueEnd' | 'onQueueAdd' | 'onQueuePop' | 'onSuccessSubmittion'
+
+export type AudioManagerEvents =  _AudioManagerEvents | AudioTrackEvents;
 
 export interface AudioTrackEventsMap {
 	'onQueueEnd': { track: AAudioTrack };
@@ -38,13 +40,19 @@ export class AudioManager {
 
 	}
 
+	private m_audioTrackHuskFactory(buffer : Buffer, title : string): AudioTrackHusk {
+		const audio_track = new AudioTrackHusk(buffer, title);
+
+		return audio_track;
+	}
+
 	private async m_downloadTrack(url: string): Promise<AudioTrackHusk | null> {
 		this._is_loading_track = true;
 		const track_buffer = await Youtube.getAudioBuffer(url);
 		this._is_loading_track = false;
 		if (track_buffer) {
 			try {
-				const track = new AudioTrackHusk(track_buffer.buffer, track_buffer.video_info.title);
+				const track = this.m_audioTrackHuskFactory(track_buffer, await Youtube.getYoutubeVideoTitle(url));
 				return track;
 			} catch (err) {
 				debugPrint("error", "[AudioManager] Failed to create audio track: " + err);
