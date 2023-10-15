@@ -111,13 +111,21 @@ export class AudioTrack extends AAudioTrack {
 	public static m_encodeAudio(audio_buffer: Buffer): [Buffer, number[]] {
 		const MAX_BUFFER_SIZE = PCM.getOpumSize(48000, 2, 20);		//max buffer size for opus encoding 
 		const encoder = new OpusEncoder(48000, 2);
-		const opus_buffer: Buffer = Buffer.alloc(audio_buffer.length / 2);	//allocate buffer for opus encoding);
+		const opus_buffer: Buffer = Buffer.alloc(audio_buffer.length);	//allocate buffer for opus encoding);
 		const packet_sizes: number[] = [];
 		let opus_index = 1;
 
 		for (let i = 0; i < audio_buffer.length; i += MAX_BUFFER_SIZE) {
-			const chunk = audio_buffer.slice(i, i + MAX_BUFFER_SIZE);
+			let chunk = audio_buffer.slice(i, i + MAX_BUFFER_SIZE);
 			try {
+				debugPrint("info", `[AudioTrack] Attempting to encode audio chunk: ${chunk.length} bytes (Supposed to be ${MAX_BUFFER_SIZE})`);
+				if(chunk.length < MAX_BUFFER_SIZE) {
+					//extend chunk with 00 bytes until it is the right size
+					const diff = MAX_BUFFER_SIZE - chunk.length;
+					const diff_buffer = Buffer.alloc(diff);
+					chunk = Buffer.concat([chunk, diff_buffer]);
+				}
+
 				const encoded_chunk = encoder.encode(chunk);
 				encoded_chunk.copy(opus_buffer, opus_index - 1);
 				debugPrint("info", "[AudioTrack] Encoded audio chunk: " + encoded_chunk.length + " bytes (" + chunk.length + " bytes raw)");

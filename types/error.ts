@@ -1,3 +1,4 @@
+
 export class DiscordBotError extends Error {
 	constructor(message?: string) {
 		super(message);
