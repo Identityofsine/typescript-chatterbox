@@ -6,7 +6,17 @@ import { Message } from "discord.js";
 export const stop = new Command<Message, void>('stop', 'Stops The Bot From Playing', [],
 	async ({ props, guild }) => {
 		const audio_manager = AudioInstance.getInstance().getAudioManager(guild);
-		audio_manager.stopQueue();
+		const message_notplaying = "**Nothing is playing**";
+		if (!audio_manager.isPlaying) {
+			props.channel.send(message_notplaying);
+			return;
+		}
+		try {
+			audio_manager.stopQueue();
+		} catch (e) {
+			props.channel.send(message_notplaying);
+			return;
+		}
 		const connection = getVoiceConnection(guild.id);
 		if (!connection) throw new Error("No connection found")
 		audio_manager.on('onEnd', async () => {
