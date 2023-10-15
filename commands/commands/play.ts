@@ -35,13 +35,6 @@ export const play = new Command<Message, void>('play', 'Play a song', [],
 		try {
 			const url = ArgumentGrabber<'url' | 'query'>(props, ['url']).url;
 
-			debugExecute(() => {
-				if (url)
-					props.channel.send("**[DEBUG:ℹ️] Trying to Play : *" + url + "***");
-				else
-					props.channel.send("**[DEBUG:❌] No url provided**");
-			});
-
 			if (url === undefined) {
 				connection.destroy();
 				throw new DiscordBotError("No url provided");
@@ -52,6 +45,9 @@ export const play = new Command<Message, void>('play', 'Play a song', [],
 				return;
 			} else {
 
+				audio_manager.on('onSuccessSubmittion', async ({ track }: { track: AudioTrack }) => {
+					props.channel.send("**LOADING : *" + track.title + "*...**");
+				});
 				audio_manager.on('onTick', async ({ byte }: { byte: Buffer }) => {
 					connection.playOpusPacket(byte);
 				})

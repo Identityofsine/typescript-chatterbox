@@ -5,12 +5,13 @@ import { AsyncFunction } from "../types/asyncfunction";
 import { Youtube } from "../util/Youtube";
 import debugPrint, { debugExecute } from "../util/DebugPrint";
 
-export type AudioManagerEvents = 'onQueueEnd' | 'onQueueAdd' | 'onQueuePop' | AudioTrackEvents;
+export type AudioManagerEvents = 'onQueueEnd' | 'onQueueAdd' | 'onQueuePop' | 'onSuccessSubmittion' | AudioTrackEvents;
 
 export interface AudioTrackEventsMap {
 	'onQueueEnd': { track: AAudioTrack };
 	'onQueueAdd': { track: AAudioTrack };
 	'onQueuePop': { track: AAudioTrack };
+	'onSuccessSubmittion': { track: AAudioTrack };
 	'onTick': { byte: Buffer };
 	'onEnd': { track: AudioTrack };
 	'onStart': null;
@@ -113,11 +114,19 @@ export class AudioManager {
 	}
 
 	private m_shouldPlayTrackNow(): boolean {
-		return this._queue.length === 0 && this._is_playing === false;
+		return this._queue.length === 0 && this._is_playing === false && !this._is_loading_track;
 	}
 
 	public async addToQueue(song: string) {
 		//TODO: add song to queue
+		const valid_url = Youtube.validYoutubeVideo(song);
+		if (!valid_url) throw new DiscordBotError("Invalid Youtube URL");
+
+
+
+		const song_info = await Youtube.getYoutubeVideoInfo(song);
+		this.call('onSuccessSubmittion', { track: new AudioTrackHusk(null, song_info.title) });
+
 		const track = await this.m_downloadTrack(song);
 		if (!track) throw new DiscordBotError("Failed to download track");
 		track.on('onTick', async (byte: { byte: Buffer }) => {
@@ -128,7 +137,7 @@ export class AudioManager {
 			this.m_pollQueue();
 		});
 
-		if (this.m_shouldPlayTrackNow() && !this._is_loading_track) {
+		if (this.m_shouldPlayTrackNow()) {
 			debugPrint("info", "[AudioManager] Playing track");
 			this._current_track = track.cast();
 			this._current_track.start();
@@ -136,7 +145,6 @@ export class AudioManager {
 			this.call('onStart', null);
 		} else {
 			debugPrint("info", `[AudioManager] Added Track`);
-			this.call('onQueueAdd', { track: track });
 			this._queue.push(track);
 		}
 	}
