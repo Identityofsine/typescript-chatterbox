@@ -48,10 +48,12 @@ export const play = new Command<Message, void>('play', 'Play a song', [],
 			}
 
 			if (audio_manager.isPlaying) {
-				audio_manager.addToQueue(url);
-				return;
-			} else {
 
+			} else {
+				audio_manager.on('onStart', async ({ track }: { track: AudioTrack }) => {
+					if (track === undefined) return;
+					props.channel.send("**NOW PLAYING : *" + track.title + "*.**");
+				});
 				audio_manager.on('onTick', async ({ byte }: { byte: Buffer }) => {
 					connection.playOpusPacket(byte);
 				})
