@@ -7,7 +7,7 @@ import debugPrint, { debugExecute } from "../util/DebugPrint";
 
 export type _AudioManagerEvents = 'onQueueEnd' | 'onQueueAdd' | 'onQueuePop' | 'onSuccessSubmittion'
 
-export type AudioManagerEvents =  _AudioManagerEvents | AudioTrackEvents;
+export type AudioManagerEvents = _AudioManagerEvents | AudioTrackEvents;
 
 export interface AudioTrackEventsMap {
 	'onQueueEnd': { track: AAudioTrack };
@@ -40,7 +40,7 @@ export class AudioManager {
 
 	}
 
-	private m_audioTrackHuskFactory(buffer : Buffer, title : string): AudioTrackHusk {
+	private m_audioTrackHuskFactory(buffer: Buffer, title: string): AudioTrackHusk {
 		const audio_track = new AudioTrackHusk(buffer, title);
 
 		return audio_track;
@@ -150,7 +150,7 @@ export class AudioManager {
 			this._current_track = track.cast();
 			this._current_track.start();
 			this._is_playing = true;
-			this.call('onStart', null);
+			this.call('onStart', { track: this._current_track });
 		} else {
 			debugPrint("info", `[AudioManager] Added Track`);
 			this._queue.push(track);
