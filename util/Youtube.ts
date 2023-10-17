@@ -247,17 +247,28 @@ export namespace Youtube {
 
 	}
 
+	export async function validYoutubeVideo(url: string): Promise<boolean> {
+		return ytdl.validateURL(url);
+	}
+
+	export async function getYoutubeVideoInfo(url: string): Promise<VideoInfo> {
+		if (!await validYoutubeVideo(url)) throw new Error("Invalid Youtube URL");
+
+		const yt_info_uncasted = await ytdl.getBasicInfo(url);
+		const yt_info: VideoInfo = {
+			title: yt_info_uncasted.videoDetails.title,
+			description: yt_info_uncasted.videoDetails.description,
+			duration: Number(yt_info_uncasted.videoDetails.lengthSeconds),
+		}
+		return yt_info;
+	}
+
 	export type YoutubeResponse = { video_info: VideoInfo, buffer: Buffer }
 	export async function getAudioBuffer(url: string): Promise<YoutubeResponse> {
 
 		try {
 			const yt_buffer = await downloadYoutubeAudioBuffer(url);
-			const yt_info_uncasted = await ytdl.getBasicInfo(url);
-			const yt_info: VideoInfo = {
-				title: yt_info_uncasted.videoDetails.title,
-				description: yt_info_uncasted.videoDetails.description,
-				duration: Number(yt_info_uncasted.videoDetails.lengthSeconds),
-			}
+			const yt_info = await getYoutubeVideoInfo(url);
 
 
 			const finish_pipe = () => {
