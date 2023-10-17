@@ -31,6 +31,9 @@ export const play = new Command<Message, void>('play', 'Play a song', [],
 				adapterCreator: guild.voiceAdapterCreator,
 			});
 		}
+
+		const sent_message = await props.channel.send("**[DEBUG] Handling your request...**");
+
 		//#region audio handling
 		try {
 			const url = ArgumentGrabber<'url' | 'query'>(props, ['url']).url;
@@ -40,9 +43,7 @@ export const play = new Command<Message, void>('play', 'Play a song', [],
 				throw new DiscordBotError("No url provided");
 			}
 
-			if (audio_manager.isPlaying) {
-
-			} else {
+			audio_manager.onInit(() => {
 				audio_manager.on('onStart', async ({ track }: { track: AudioTrack }) => {
 					if (track === undefined) return;
 					props.channel.send("**NOW PLAYING : *" + track.title + "*.**");
@@ -62,11 +63,15 @@ export const play = new Command<Message, void>('play', 'Play a song', [],
 						props.channel.send(`**[DEBUG:ℹ️] I have finished playing ${track.title} **`);
 					});
 				});
-			}
+			});
 
-			audio_manager.addToQueue(url);
+			await audio_manager.addToQueue(url);
+			sent_message.edit("**Your request has been handled.**");
+			sent_message.react('✅');
+
 
 		} catch (e) {
+			sent_message.edit(`**There was an error with your request...** \`(${e.message})\``);
 			throw new DiscordBotError(e.message);
 		}
 	});

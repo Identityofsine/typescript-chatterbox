@@ -18,6 +18,7 @@ export interface AudioTrackEventsMap {
 	'onEnd': { track: AudioTrack };
 	'onStart': null;
 	'onReady': null;
+	'onError': { error: Error };
 }
 
 export type AudioTrackEventsMapKeys = keyof AudioTrackEventsMap;
@@ -29,6 +30,7 @@ export class AudioManager {
 	private _is_playing: boolean = false;
 	private _current_track: AudioTrack;
 	private _is_loading_track: boolean = false;
+	private _already_init: boolean = false;
 	private _events: Map<AudioManagerEvents, AsyncFunction<AudioTrackEventsMap[AudioTrackEventsMapKeys], void>[]> = new Map<AudioManagerEvents, AsyncFunction<any, void>[]>();
 
 
@@ -56,6 +58,7 @@ export class AudioManager {
 				return track;
 			} catch (err) {
 				debugPrint("error", "[AudioManager] Failed to create audio track: " + err);
+				this.call('onError', { error: err })
 				throw err;
 			}
 		}
@@ -116,6 +119,15 @@ export class AudioManager {
 		this._events.get(event).push(func);
 	}
 
+	public onInit(func: Function): boolean {
+		if (this._already_init) return false;
+		func();
+		this._already_init = true;
+		return true;
+
+	}
+
+
 	public async stopQueue() {
 		this.stop();
 		this._queue = [];
@@ -153,6 +165,7 @@ export class AudioManager {
 			this.call('onStart', { track: this._current_track });
 		} else {
 			debugPrint("info", `[AudioManager] Added Track`);
+			this.call('onQueueAdd', { track: track });
 			this._queue.push(track);
 		}
 	}

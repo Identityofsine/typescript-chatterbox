@@ -4,7 +4,7 @@ import { AudioTrackEventsMap, AudioTrackEventsMapKeys } from "./audiomanager";
 import debugPrint, { debugExecute } from "../util/DebugPrint";
 import { PCM } from "../util/PCM";
 
-export type AudioTrackEvents = 'onTick' | 'onEnd' | 'onStart' | 'onReady';
+export type AudioTrackEvents = 'onTick' | 'onEnd' | 'onStart' | 'onReady' | 'onError';
 
 export abstract class AAudioTrack {
 	protected _title: string;
@@ -119,7 +119,7 @@ export class AudioTrack extends AAudioTrack {
 			let chunk = audio_buffer.slice(i, i + MAX_BUFFER_SIZE);
 			try {
 				debugPrint("info", `[AudioTrack] Attempting to encode audio chunk: ${chunk.length} bytes (Supposed to be ${MAX_BUFFER_SIZE})`);
-				if(chunk.length < MAX_BUFFER_SIZE) {
+				if (chunk.length < MAX_BUFFER_SIZE) {
 					//extend chunk with 00 bytes until it is the right size
 					const diff = MAX_BUFFER_SIZE - chunk.length;
 					const diff_buffer = Buffer.alloc(diff);
