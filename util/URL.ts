@@ -5,6 +5,7 @@ export namespace URL {
 
 	//isvalidurl 10/22/23
 	export function isValidURL(str: string) {
-		return false;
+		const urlRegex = /^(ftp|http|https):\/\/[^ "]+$/;
+		return urlRegex.test(str);
 	}
 }
