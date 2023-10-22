@@ -8,6 +8,7 @@ const intents: ClientOptions['intents'] = ['Guilds', 'GuildMessages', 'GuildMess
 
 const client = new Client({ intents: [...intents as any] });
 
+
 client.on("ready", () => {
 	console.log("[STATUS:✅] Bot is online")
 });
