@@ -32,6 +32,8 @@ export class AudioManager {
 	private _is_loading_track: boolean = false;
 	private _already_init: boolean = false;
 	private _events: Map<AudioManagerEvents, AsyncFunction<AudioTrackEventsMap[AudioTrackEventsMapKeys], void>[]> = new Map<AudioManagerEvents, AsyncFunction<any, void>[]>();
+	private _search_active: boolean = false;
+	private _last_search_results: Youtube.SearchResult[] = [];
 
 
 	constructor(guild: Guild) {
@@ -91,6 +93,26 @@ export class AudioManager {
 
 	public isQueueEmpty(): boolean {
 		return this._queue.length === 0;
+	}
+
+	public set searchActive(active: boolean) {
+		this._search_active = active;
+	}
+
+	public set queryResults(results: Youtube.SearchResult[]) {
+		this._last_search_results = results;
+	}
+
+	public get queryResults(): Youtube.SearchResult[] {
+		return this._last_search_results;
+	}
+
+	public get searchActive(): boolean {
+		return this._search_active;
+	}
+
+	public query(index: number): Youtube.SearchResult {
+		return this._last_search_results[index];
 	}
 
 	public stop() {

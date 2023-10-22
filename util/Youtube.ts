@@ -27,7 +27,7 @@ export namespace Youtube {
 		liveBroadcastContent: string;
 	}
 
-	interface SearchResult {
+	export interface SearchResult {
 		kind: string;
 		etag: string;
 		id: SearchId;
@@ -200,10 +200,6 @@ export namespace Youtube {
 		localizations: Record<string, Localization>;
 	}
 
-	interface SearchResponse {
-		SEARCH: SearchResult[];
-	}
-
 	interface VideoResponse {
 		VIDEO: Video[];
 	}
@@ -220,9 +216,13 @@ export namespace Youtube {
 	export function getVideoInfo(url: string): Promise<VideoResponse> {
 
 	}
-	//@ts-ignore
-	export function search(query: string): Promise<SearchResponse> {
 
+	export async function search(query: string): Promise<SearchResult[]> {
+		const url = "https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=5&q=" + query + "&key=" + API_KEY;
+
+		const response = await fetch(url);
+		const json = await response.json();
+		return json.items as SearchResult[];
 	}
 
 	async function downloadYoutubeAudioBuffer(url: string): Promise<Readable> {
@@ -246,6 +246,7 @@ export namespace Youtube {
 		return audio_pipe;
 
 	}
+
 
 	export async function validYoutubeVideo(url: string): Promise<boolean> {
 		return ytdl.validateURL(url);

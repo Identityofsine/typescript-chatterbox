@@ -7,6 +7,8 @@ import { AudioPlayer, AudioResource, getVoiceConnection, joinVoiceChannel } from
 import debugPrint, { debugExecute } from "../../util/DebugPrint";
 import { ArgumentGrabber } from "../arguments/arguments";
 import { AudioTrack } from "../../audioplayer/AudioTrack";
+import { URL } from "../../util/URL";
+import { Youtube } from "../../util/Youtube";
 
 export const play = new Command<Message, void>('play', 'Play a song', [],
 	async ({ props, guild }) => {
@@ -14,6 +16,62 @@ export const play = new Command<Message, void>('play', 'Play a song', [],
 		const member = GetMember(user, guild);
 		const audio_manager = AudioInstance.getInstance().getAudioManager(guild);
 		const voice_channel = member.voice.channel;
+
+		let url = ArgumentGrabber<'url' | 'query'>(props, ['url']).url;
+		if (url === undefined) {
+			throw new DiscordBotError("No url provided");
+		}
+
+		const cancel_search = () => {
+			audio_manager.searchActive = false;
+			audio_manager.queryResults = [];
+		}
+
+		if (!URL.isValidURL(url)) {
+			if (audio_manager.searchActive) {
+				//check if url is a number, should be if search mode is one, if not ignore
+				if (isNaN(Number(url))) {
+					cancel_search();
+					throw new DiscordBotError("Invalid number");
+				}
+				//check if number is in range
+				if (Number(url) > audio_manager.queryResults.length || Number(url) < 1) {
+					cancel_search();
+					throw new DiscordBotError("Number out of range");
+				}
+				//grab youtube video
+				const youtube_video = audio_manager.query(Number(url) - 1);
+				if (!youtube_video) {
+					cancel_search();
+					throw new DiscordBotError("Something went wrong with the query results... Try Again...");
+				}
+				//get url from query results
+				url = `https://www.youtube.com/watch?v=${youtube_video.id.videoId}`
+				props.channel.send(`**You Chose: "${youtube_video.snippet.title} - ${youtube_video.snippet.channelTitle}"**`);
+				cancel_search();
+			}
+			else {
+				try {
+					url = props.content.split(' ').slice(1).join(' ');
+					const search_results = await Youtube.search(url);
+					let message_result = "";
+					search_results.map((result, index) => {
+						message_result += `**${index + 1}.** ${result.snippet.title}\n`;
+					});
+					props.channel.send(message_result);
+					audio_manager.searchActive = true;
+					audio_manager.queryResults = search_results;
+					return;
+				}
+				catch (e) {
+					throw new DiscordBotError("Something went wrong with the query results... Try Again...");
+				}
+			}
+		} else if (URL.isValidURL(url) && audio_manager.searchActive) {
+			//disable search and immediately play url
+			cancel_search();
+			props.channel.send("**[DEBUG:ℹ️] Search disabled.**");
+		}
 
 		if (!voice_channel) throw new DiscordBotError("You must be in a voice channel to use this command");
 		//#region connection verifyier
@@ -36,12 +94,7 @@ export const play = new Command<Message, void>('play', 'Play a song', [],
 
 		//#region audio handling
 		try {
-			const url = ArgumentGrabber<'url' | 'query'>(props, ['url']).url;
 
-			if (url === undefined) {
-				connection.destroy();
-				throw new DiscordBotError("No url provided");
-			}
 
 			audio_manager.onInit(() => {
 				audio_manager.on('onStart', async ({ track }: { track: AudioTrack }) => {
@@ -72,6 +125,7 @@ export const play = new Command<Message, void>('play', 'Play a song', [],
 
 		} catch (e) {
 			sent_message.edit(`**There was an error with your request...** \`(${e.message})\``);
+			connection.disconnect();
 			throw new DiscordBotError(e.message);
 		}
 	});
