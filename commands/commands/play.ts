@@ -27,12 +27,31 @@ export const play = new Command<Message, void>('play', 'Play a song', [],
 			audio_manager.queryResults = [];
 		}
 
+		const search = async () => {
+			try {
+				url = props.content.split(' ').filter((arg) => !arg.startsWith('--')).slice(1).join(' ');
+				//filter "--" from URL
+				const search_results = await Youtube.search(url);
+				let message_result = "";
+				search_results.map((result, index) => {
+					message_result += `**${index + 1}.** ${result.snippet.title}\n`;
+				});
+				props.channel.send(message_result);
+				audio_manager.searchActive = true;
+				audio_manager.queryResults = search_results;
+				return;
+			}
+			catch (e) {
+				throw new DiscordBotError("Something went wrong with the query results... Try Again...");
+			}
+		}
+
 		if (!URL.isValidURL(url)) {
 			if (audio_manager.searchActive) {
 				//check if url is a number, should be if search mode is one, if not ignore
 				if (isNaN(Number(url))) {
-					cancel_search();
-					throw new DiscordBotError("Invalid number");
+					search();
+					return;
 				}
 				//check if number is in range
 				if (Number(url) > audio_manager.queryResults.length || Number(url) < 1) {
@@ -51,21 +70,8 @@ export const play = new Command<Message, void>('play', 'Play a song', [],
 				cancel_search();
 			}
 			else {
-				try {
-					url = props.content.split(' ').slice(1).join(' ');
-					const search_results = await Youtube.search(url);
-					let message_result = "";
-					search_results.map((result, index) => {
-						message_result += `**${index + 1}.** ${result.snippet.title}\n`;
-					});
-					props.channel.send(message_result);
-					audio_manager.searchActive = true;
-					audio_manager.queryResults = search_results;
-					return;
-				}
-				catch (e) {
-					throw new DiscordBotError("Something went wrong with the query results... Try Again...");
-				}
+				await search();
+				return;
 			}
 		} else if (URL.isValidURL(url) && audio_manager.searchActive) {
 			//disable search and immediately play url
@@ -118,7 +124,7 @@ export const play = new Command<Message, void>('play', 'Play a song', [],
 				});
 			});
 
-			await audio_manager.addToQueue(url);
+			audio_manager.addToQueue(url);
 			sent_message.edit("**Your request has been handled.**");
 			sent_message.react('✅');
 
