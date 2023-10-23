@@ -204,13 +204,13 @@ export namespace Youtube {
 		VIDEO: Video[];
 	}
 
-	interface VideoInfo {
+	export interface VideoInfo {
 		title: string;
 		description: string;
 		duration: number;
 	}
 
-	const API_KEY = "AIzaSyDbpxwe3VnHZtKZuPJzXCkQtianD37WcYs"
+	const API_KEY = "AIzaSyDbpxwe3VnHZtKZuPJzXCkQtianD37WcYs" //move to env
 
 	//@ts-ignore
 	export function getVideoInfo(url: string): Promise<VideoResponse> {
