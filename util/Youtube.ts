@@ -1,7 +1,7 @@
 import ytdl from "@distube/ytdl-core";
-import ffpmeg from "fluent-ffmpeg";
 import { Readable, Writable, Transform } from "stream";
 import debugPrint from "./DebugPrint";
+import { PCM } from "./PCM";
 
 export namespace Youtube {
 	interface SearchId {
@@ -270,49 +270,9 @@ export namespace Youtube {
 		try {
 			const yt_buffer = await downloadYoutubeAudioBuffer(url);
 			const yt_info = await getYoutubeVideoInfo(url);
+			const yt_pcm = await PCM.ffpmegToPCM(yt_buffer);
 
-
-			const finish_pipe = () => {
-				debugPrint("info", "[Youtube][FFPMEG] Buffer transformed successfully");
-			}
-
-			const ffpmeg_output = new Transform({
-				transform(chunk, encoding, callback) {
-					debugPrint("info", "[Youtube] Buffer transformed: " + chunk.length + " bytes");
-					this.push(chunk);
-					callback();
-				}
-			}
-			);
-			const temp_pipe = new Writable({
-				write(chunk, encoding, callback) {
-					debugPrint("info", "[Youtube][FFPMEG] Buffer received: " + chunk.length + " bytes");
-					ffpmeg_output.push(chunk);
-					callback();
-				},
-				final(callback) {
-					callback();
-				}
-			});
-
-			await (new Promise((resolve, reject) => {
-				ffpmeg()
-					.input(yt_buffer as Readable)
-					.audioChannels(2)
-					.toFormat('wav')
-					.on('end', () => {
-						debugPrint("info", "[Youtube][FFPMEG] END");
-						finish_pipe();
-						resolve(null);
-					})
-					.on('error', (err) => {
-						debugPrint("error", "[Youtube][FFPMEG] Error: " + err);
-						reject(err);
-					})
-					.pipe(temp_pipe, { end: true })
-			}));
-
-			return { video_info: yt_info, buffer: ffpmeg_output.read() };
+			return { video_info: yt_info, buffer: yt_pcm };
 
 		}
 		catch (err) {
