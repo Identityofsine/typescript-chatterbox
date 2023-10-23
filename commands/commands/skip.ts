@@ -7,7 +7,7 @@ import { debugExecute } from "../../util/DebugPrint";
 export const skip = new Command<Message, void>('skip', 'Skip the current song', [],
 	async ({ props, guild }) => {
 		const audio_manager = AudioInstance.getInstance().getAudioManager(guild);
-		const sent_message = await props.channel.send("**Trying to Skipping...**");
+		const sent_message = await props.channel.send("**Trying to Skip...**");
 
 		if (audio_manager.skip()) {
 			debugExecute(() => props.channel.send("**[DEBUG] Skipped...**"));
