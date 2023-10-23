@@ -4,7 +4,7 @@ import Command from "./command";
 import { joinVoiceChannel } from "@discordjs/voice";
 import debugPrint from "../../util/DebugPrint";
 
-export const join = new Command<Message, void>('join', 'Join the voice channel you are in', [],
+export const join = new Command<Message, void>('join', 'Join the voice channel you\'re currently in', [],
 
 	async ({ props, guild }) => {
 		if (!props?.author) throw new Error('Author not found.');

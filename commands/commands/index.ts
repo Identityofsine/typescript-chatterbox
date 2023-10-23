@@ -1,3 +1,4 @@
+import { help } from "./help";
 import { join } from "./join";
 import { leave } from "./leave";
 import { ping } from "./ping";
@@ -6,4 +7,4 @@ import { queue } from "./queue";
 import { skip } from "./skip";
 import { stop } from "./stop";
 
-export const commands = [ping, join, leave, play, stop, skip, queue];
+export const commands = [help, ping, join, leave, play, stop, skip, queue];
