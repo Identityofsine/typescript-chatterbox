@@ -6,5 +6,6 @@ import { play } from "./play";
 import { queue } from "./queue";
 import { skip } from "./skip";
 import { stop } from "./stop";
+import { tts } from "./tts";
 
-export const commands = [help, ping, join, leave, play, stop, skip, queue];
+export const commands = [help, ping, join, leave, play, stop, skip, queue, tts];

@@ -14,7 +14,20 @@ export function ArgumentGrabber<T extends string>(message: Message, args_list: T
 
 	let arg_list: IArgument<T> = {};
 	for (let i = 0; i < args.length; i++) {
-		if (args[i].startsWith('--')) continue;
+		if (args[i].startsWith('--')) {
+			const arg = args[i].replace('--', '');
+			if (i + 1 >= args.length) {
+				continue;
+			} else {
+				if (args[i + 1].startsWith('--')) {
+
+					continue;
+				}
+				arg_list[arg] = args[i + 1];
+				i++;
+				continue;
+			}
+		}
 		let label: string = '';
 		if (args.length < i) {
 			label += i;
@@ -28,8 +41,10 @@ export function ArgumentGrabber<T extends string>(message: Message, args_list: T
 		const arg = force_args[i];
 		let arg_found: string = '';
 		arg_found = arg.replace('--', '');
+		debugPrint("info", "[ArgumentGrabber] Found forced argument: " + arg_found);
+		if (args_list.includes(arg_found as T))
+			continue;
 		arg_list[arg_found] = true;
-
 	}
 
 	debugPrint("info", "[ArgumentGrabber] Grabbed arguments: " + JSON.stringify(arg_list));

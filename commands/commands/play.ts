@@ -100,8 +100,6 @@ export const play = new Command<Message, void>('play', 'The bot plays(or queues)
 
 		//#region audio handling
 		try {
-
-
 			audio_manager.onInit(() => {
 				audio_manager.on('onStart', async ({ track }: { track: AudioTrack }) => {
 					if (track === undefined) return;
@@ -124,7 +122,7 @@ export const play = new Command<Message, void>('play', 'The bot plays(or queues)
 				});
 			});
 
-			audio_manager.addToQueue(url);
+			await audio_manager.addToQueue(url);
 			sent_message.edit("**Your request has been handled.**");
 			sent_message.react('✅');
 

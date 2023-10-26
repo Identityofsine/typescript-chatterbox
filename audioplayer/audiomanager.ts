@@ -159,18 +159,24 @@ export class AudioManager {
 		return this._queue.length === 0 && this._is_playing === false && !this._is_loading_track;
 	}
 
-	public async addToQueue(song: string) {
-		//TODO: add song to queue
-		const valid_url = Youtube.validYoutubeVideo(song);
-		if (!valid_url) throw new DiscordBotError("Invalid Youtube URL");
+	public async addToQueue(song: string | AudioTrackHusk) {
 
+		let track: AudioTrackHusk;
+		if (song instanceof AudioTrackHusk) {
+			track = song;
+		} else {
+			const pre_song = song as string;
+			const valid_url = Youtube.validYoutubeVideo(pre_song);
+			if (!valid_url) throw new DiscordBotError("Invalid Youtube URL");
 
+			const song_info = await Youtube.getYoutubeVideoInfo(pre_song);
+			this.call('onSuccessSubmittion', { track: new AudioTrackHusk(null, song_info.title) });
 
-		const song_info = await Youtube.getYoutubeVideoInfo(song);
-		this.call('onSuccessSubmittion', { track: new AudioTrackHusk(null, song_info.title) });
+			debugPrint("info", "[AudioManager] Downloading track");
+			track = await this.m_downloadTrack(pre_song);
+			if (!track) throw new DiscordBotError("Failed to download track");
+		}
 
-		const track = await this.m_downloadTrack(song);
-		if (!track) throw new DiscordBotError("Failed to download track");
 		track.on('onTick', async (byte: { byte: Buffer }) => {
 			this.call('onTick', byte);
 		});
