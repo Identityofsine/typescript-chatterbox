@@ -156,7 +156,7 @@ export class AudioManager {
 	}
 
 	private m_shouldPlayTrackNow(): boolean {
-		return this._queue.length === 0 && this._is_playing === false && !this._is_loading_track;
+		return this._is_playing === false && !this._is_loading_track;
 	}
 
 	public async addToQueue(song: string | AudioTrackHusk) {

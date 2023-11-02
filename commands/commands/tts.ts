@@ -59,7 +59,7 @@ export const tts = new Command<Message, void>('tts', 'The bot queues a TTS via T
 					props.channel.send("**NOW PLAYING : *" + track.title + "*.**");
 				});
 				audio_manager.on('onQueueEnd', async ({ track }: { track: AudioTrack }) => {
-					connection.disconnect();
+					VoiceConnectionHandler.getInstance().leaveChannel(guild);
 					debugExecute(() => {
 						props.channel.send(`**[DEBUG:ℹ️] I have finished playing ${track.title} **`);
 					});

@@ -103,7 +103,7 @@ export const play = new Command<Message, void>('play', 'The bot plays(or queues)
 				});
 				audio_manager.on('onQueueEnd', async ({ track }: { track: AudioTrack }) => {
 
-					VoiceConnectionHandler.getInstance().getVoiceConnection(guild)?.disconnect();
+					VoiceConnectionHandler.getInstance().leaveChannel(guild);
 					debugExecute(() => {
 						props.channel.send(`**[DEBUG:ℹ️] I have finished playing ${track.title} **`);
 					});
