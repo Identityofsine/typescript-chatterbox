@@ -17,7 +17,7 @@ export default class VoiceConnectionHandler {
 		return VoiceConnectionHandler._instance;
 	}
 
-	private connectionExists(guild: Guild): boolean {
+	public connectionExists(guild: Guild): boolean {
 		return this._voiceConnections.has(guild.id);
 	}
 
@@ -45,6 +45,7 @@ export default class VoiceConnectionHandler {
 		if (!this.connectionExists(guild)) return this.createVoiceConnection(guild, voice_channel)
 		return this._voiceConnections.get(guild.id);
 	}
+
 
 	public joinChannel(guild: Guild, voice_channel: VoiceBasedChannel): VoiceConnection {
 		const connection = this.getVoiceConnection(guild, voice_channel);
