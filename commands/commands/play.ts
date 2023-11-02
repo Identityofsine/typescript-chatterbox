@@ -93,7 +93,7 @@ export const play = new Command<Message, void>('play', 'The bot plays(or queues)
 					props.channel.send("**NOW PLAYING : *" + track.title + "*.**");
 				});
 				audio_manager.on('onTick', async ({ byte }: { byte: Buffer }) => {
-					connection.playOpusPacket(byte);
+					VoiceConnectionHandler.getInstance().getVoiceConnection(guild)?.playOpusPacket(byte);
 				})
 				audio_manager.on('onQueueAdd', async ({ track }: { track: AudioTrack }) => {
 					props.channel.send("**ADDED : *" + track.title + "*.**")
@@ -102,7 +102,8 @@ export const play = new Command<Message, void>('play', 'The bot plays(or queues)
 					props.channel.send("**NOW PLAYING : *" + track.title + "*.**");
 				});
 				audio_manager.on('onQueueEnd', async ({ track }: { track: AudioTrack }) => {
-					connection.disconnect();
+
+					VoiceConnectionHandler.getInstance().getVoiceConnection(guild)?.disconnect();
 					debugExecute(() => {
 						props.channel.send(`**[DEBUG:ℹ️] I have finished playing ${track.title} **`);
 					});

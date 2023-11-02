@@ -41,8 +41,8 @@ export default class VoiceConnectionHandler {
 		return new_connection;
 	}
 
-	public getVoiceConnection(guild: Guild, voice_channel: VoiceBasedChannel): VoiceConnection {
-		if (!this.connectionExists(guild)) return this.createVoiceConnection(guild, voice_channel)
+	public getVoiceConnection(guild: Guild, voice_channel?: VoiceBasedChannel): VoiceConnection | undefined {
+		if (!this.connectionExists(guild) && voice_channel !== undefined) return this.createVoiceConnection(guild, voice_channel)
 		return this._voiceConnections.get(guild.id);
 	}
 

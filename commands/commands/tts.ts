@@ -8,6 +8,7 @@ import { AudioTrack, AudioTrackHusk } from "../../audioplayer/AudioTrack";
 import debugPrint, { debugExecute } from "../../util/DebugPrint";
 import { DiscordBotError } from "../../types/error";
 import { ArgumentGrabber } from "../arguments/arguments";
+import VoiceConnectionHandler from "../../discord/vchandler";
 
 export const tts = new Command<Message, void>('tts', 'The bot queues a TTS via TikTok\'s API', [],
 	async ({ props, guild }) => {
@@ -39,20 +40,7 @@ export const tts = new Command<Message, void>('tts', 'The bot queues a TTS via T
 
 		}
 
-		let connection = getVoiceConnection(guild.id);
-		if (!connection) {
-			connection = joinVoiceChannel({
-				channelId: voice_channel.id,
-				guildId: guild.id,
-				adapterCreator: guild.voiceAdapterCreator,
-			});
-		} else if (connection.state.status === 'disconnected') {
-			connection = joinVoiceChannel({
-				channelId: voice_channel.id,
-				guildId: guild.id,
-				adapterCreator: guild.voiceAdapterCreator,
-			});
-		}
+		let connection = VoiceConnectionHandler.getInstance().joinChannel(guild, voice_channel);
 
 		try {
 
@@ -62,7 +50,7 @@ export const tts = new Command<Message, void>('tts', 'The bot queues a TTS via T
 					props.channel.send("**NOW PLAYING : *" + track.title + "*.**");
 				});
 				audio_manager.on('onTick', async ({ byte }: { byte: Buffer }) => {
-					connection.playOpusPacket(byte);
+					VoiceConnectionHandler.getInstance().getVoiceConnection(guild).playOpusPacket(byte);
 				})
 				audio_manager.on('onQueueAdd', async ({ track }: { track: AudioTrack }) => {
 					props.channel.send("**ADDED : *" + track.title + "*.**")
