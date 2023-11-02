@@ -50,7 +50,7 @@ export const tts = new Command<Message, void>('tts', 'The bot queues a TTS via T
 					props.channel.send("**NOW PLAYING : *" + track.title + "*.**");
 				});
 				audio_manager.on('onTick', async ({ byte }: { byte: Buffer }) => {
-					VoiceConnectionHandler.getInstance().getVoiceConnection(guild).playOpusPacket(byte);
+					VoiceConnectionHandler.getInstance().getVoiceConnection(guild)?.playOpusPacket(byte);
 				})
 				audio_manager.on('onQueueAdd', async ({ track }: { track: AudioTrack }) => {
 					props.channel.send("**ADDED : *" + track.title + "*.**")
