@@ -9,6 +9,7 @@ import { ArgumentGrabber } from "../arguments/arguments";
 import { AudioTrack } from "../../audioplayer/AudioTrack";
 import { URL } from "../../util/URL";
 import { Youtube } from "../../util/Youtube";
+import VoiceConnectionHandler from "../../discord/vchandler";
 
 export const play = new Command<Message, void>('play', 'The bot plays(or queues) a song via search or URL.', [],
 	async ({ props, guild }) => {
@@ -81,21 +82,7 @@ export const play = new Command<Message, void>('play', 'The bot plays(or queues)
 
 		if (!voice_channel) throw new DiscordBotError("You must be in a voice channel to use this command");
 		//#region connection verifyier
-		let connection = getVoiceConnection(guild.id);
-		if (!connection) {
-			connection = joinVoiceChannel({
-				channelId: voice_channel.id,
-				guildId: guild.id,
-				adapterCreator: guild.voiceAdapterCreator,
-			});
-		} else if (connection.state.status === 'disconnected') {
-			connection = joinVoiceChannel({
-				channelId: voice_channel.id,
-				guildId: guild.id,
-				adapterCreator: guild.voiceAdapterCreator,
-			});
-		}
-
+		let connection = VoiceConnectionHandler.getInstance().joinChannel(guild, voice_channel);
 		const sent_message = await props.channel.send("**[DEBUG] Handling your request...**");
 
 		//#region audio handling
