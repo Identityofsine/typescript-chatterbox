@@ -21,6 +21,19 @@ export default class VoiceConnectionHandler {
 		return this._voiceConnections.has(guild.id);
 	}
 
+	private m_voiceStillConnected(guild: Guild): boolean {
+		const connection = this._voiceConnections.get(guild.id);
+		if (!connection) return false;
+		return connection.state.status !== "destroyed" && connection.state.status !== "disconnected";
+	}
+
+	private m_destoryVoiceConnection(guild: Guild): void {
+		const connection = this._voiceConnections.get(guild.id);
+		if (!connection) return;
+		connection.destroy();
+		this._voiceConnections.delete(guild.id);
+	}
+
 	private createVoiceConnection(guild: Guild, voice_channel: VoiceBasedChannel): VoiceConnection {
 		const guild_id = guild.id;
 		if (this.connectionExists(guild)) return this._voiceConnections.get(guild_id);
@@ -42,12 +55,26 @@ export default class VoiceConnectionHandler {
 	}
 
 	public getVoiceConnection(guild: Guild, voice_channel?: VoiceBasedChannel): VoiceConnection | undefined {
-		if (!this.connectionExists(guild) && voice_channel !== undefined) return this.createVoiceConnection(guild, voice_channel)
+		if (voice_channel) {
+			if (this.connectionExists(guild)) {
+				if (this.m_voiceStillConnected(guild)) return this._voiceConnections.get(guild.id);
+				else {
+					this.m_destoryVoiceConnection(guild);
+				}
+			}
+			return this.createVoiceConnection(guild, voice_channel);
+		}
+
 		return this._voiceConnections.get(guild.id);
 	}
 
 
 	public joinChannel(guild: Guild, voice_channel: VoiceBasedChannel): VoiceConnection {
+		if (this.m_voiceStillConnected(guild)) return this.getVoiceConnection(guild, voice_channel);
+		else {
+			this.m_destoryVoiceConnection(guild);
+		}
+
 		const connection = this.getVoiceConnection(guild, voice_channel);
 		return connection;
 	};
