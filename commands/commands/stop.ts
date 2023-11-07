@@ -19,11 +19,4 @@ export const stop = new Command<Message, void>('stop', 'Stops The Bot From Playi
 			return;
 		}
 		const connection = VoiceConnectionHandler.getInstance().leaveChannel(guild);
-		audio_manager.on('onEnd', async () => {
-			//check if connection is still there
-			if (!VoiceConnectionHandler.getInstance().connectionExists(guild)) return;
-			debugExecute(() => {
-				props.channel.send("**[DEBUG:ℹ️] Stopped Playing**");
-			})
-		});
 	});
