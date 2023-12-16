@@ -69,13 +69,20 @@ export class AudioTrack extends AAudioTrack {
 	private _is_playing: boolean = false;
 	private _audio_stream_opec: Buffer;
 	private _audio_opec_packet_sizes: number[] = [];
+	private _ready: boolean = false;
 
 	/**
 	 * @param audio_buffer The audio buffer to play, this must be in PCM format
 	 */
 	constructor(audio_buffer: Buffer, title?: string, url?: string, duration?: number, thumbnail?: string) {
 		super(audio_buffer, title, url, duration, thumbnail);
-		[this._audio_stream_opec, this._audio_opec_packet_sizes] = AudioTrack.m_encodeAudio(audio_buffer);
+		this.m_convertToOpus();
+	}
+
+	private async m_convertToOpus() {
+		if (this._ready) return;
+		[this._audio_stream_opec, this._audio_opec_packet_sizes] = await AudioTrack.m_encodeAudio(this._audio_buffer);
+		this._ready = true;
 	}
 
 	public get opusPackets(): Buffer {
@@ -108,7 +115,7 @@ export class AudioTrack extends AAudioTrack {
 	}
 
 	//@ts-ignore
-	public static m_encodeAudio(audio_buffer: Buffer): [Buffer, number[]] {
+	public async static m_encodeAudio(audio_buffer: Buffer): Promise<[Buffer, number[]]> {
 		const MAX_BUFFER_SIZE = PCM.getOpumSize(48000, 2, 20);		//max buffer size for opus encoding 
 		const encoder = new OpusEncoder(48000, 2);
 		const opus_buffer: Buffer = Buffer.alloc(audio_buffer.length);	//allocate buffer for opus encoding);
@@ -152,6 +159,7 @@ export class AudioTrack extends AAudioTrack {
 		const last_packet_time = new TimeDelta();
 
 		const send_packet = async () => {
+			while (!this._ready) { await (new Promise((resolve) => { setTimeout(() => { resolve(null); }, 100); })); }
 			const packet_size = this._audio_opec_packet_sizes[packet_index];
 			if (packet_size === undefined) {
 				debugPrint("info", "[AudioTrack Tick] End of track");

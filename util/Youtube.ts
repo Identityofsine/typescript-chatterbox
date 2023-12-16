@@ -234,12 +234,13 @@ export namespace Youtube {
 			yt_download.on('data', (chunk) => {
 				debugPrint("info", "[Youtube] Downloading audio buffer: " + chunk.length + " bytes");
 				audio_pipe.push(chunk);
-				resolve(null);
+				if (chunk != null && chunk.length != 0) {
+					resolve(null);
+				}
 			})
 			yt_download.on('end', () => {
 				debugPrint("info", "[Youtube] Downloading audio buffer: Finished");
 				audio_pipe.push(null);
-				resolve(null);
 			});
 		}));
 
@@ -267,11 +268,16 @@ export namespace Youtube {
 	export async function getAudioBuffer(url: string): Promise<YoutubeResponse> {
 
 		try {
-			const yt_buffer = await downloadYoutubeAudioBuffer(url);
-			const yt_info = await getYoutubeVideoInfo(url);
-			const yt_pcm = await PCM.ffpmegToPCM(yt_buffer);
+			try {
+				const yt_buffer = await downloadYoutubeAudioBuffer(url);
+				const yt_info = await getYoutubeVideoInfo(url);
+				const yt_pcm = await PCM.ffpmegToPCM(yt_buffer);
+				return { video_info: yt_info, buffer: yt_pcm };
 
-			return { video_info: yt_info, buffer: yt_pcm };
+			} catch (err) {
+				debugPrint("error", "[Youtube] Error: " + err);
+				throw err;
+			}
 
 		}
 		catch (err) {
