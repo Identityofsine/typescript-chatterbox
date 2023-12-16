@@ -239,12 +239,11 @@ export namespace Youtube {
 			yt_download.on('end', () => {
 				debugPrint("info", "[Youtube] Downloading audio buffer: Finished");
 				audio_pipe.push(null);
+				resolve(null);
 			});
 		}));
 
-
 		return audio_pipe;
-
 	}
 
 
