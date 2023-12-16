@@ -30,6 +30,9 @@ export namespace PCM.Stream {
 				.audioFrequency(AUDIO_RATE)
 				.audioBitrate(AUDIO_BITRATE)
 				.toFormat('wav')
+				.on('data', (chunk) => {
+					resolve(null);
+				})
 				.on('end', () => {
 					debugPrint("info", "[PCM][FFPMEG] END");
 					finish_pipe();
@@ -37,5 +40,6 @@ export namespace PCM.Stream {
 				.pipe(ffpmeg_output, { end: true });
 		});
 
+		return ffpmeg_output;
 	}
 }

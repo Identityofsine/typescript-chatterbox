@@ -125,7 +125,6 @@ export class AudioTrack extends AAudioTrack {
 					const diff_buffer = Buffer.alloc(diff);
 					chunk = Buffer.concat([chunk, diff_buffer]);
 				}
-
 				const encoded_chunk = encoder.encode(chunk);
 				encoded_chunk.copy(opus_buffer, opus_index - 1);
 				debugPrint("info", "[AudioTrack] Encoded audio chunk: " + encoded_chunk.length + " bytes (" + chunk.length + " bytes raw)");
