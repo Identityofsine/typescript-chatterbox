@@ -10,6 +10,8 @@ const token: string = process.env.DISCORD as string;
 if (!token) {
 	debugPrint("error", "Token is not provided. Please provide a token in .env file.");
 	process.exit(1);
+} else {
+	debugPrint("info", "Token is provided (" + token + ")");
 }
 
 const intents: ClientOptions['intents'] = ['Guilds', 'GuildMessages', 'GuildMessageReactions', "GuildVoiceStates", "GuildMembers", "MessageContent"];
