@@ -7,6 +7,11 @@ dotenv.config();
 
 const token: string = process.env.DISCORD as string;
 
+if (!token) {
+	debugPrint("error", "Token is not provided. Please provide a token in .env file.");
+	process.exit(1);
+}
+
 const intents: ClientOptions['intents'] = ['Guilds', 'GuildMessages', 'GuildMessageReactions', "GuildVoiceStates", "GuildMembers", "MessageContent"];
 
 const client = new Client({ intents: [...intents as any] });
