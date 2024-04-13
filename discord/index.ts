@@ -1,8 +1,11 @@
 import { Client, Message, ClientOptions } from "discord.js";
 import debugPrint from "../util/DebugPrint";
 import prefix_middleware from "../commands/middleware_command";
+import dotenv from "dotenv";
 
-const token: string = "MTA5MTUwNzQwNTI0MzgxODA2NA.Gk-yhw.HJ5-cGEGIgNmRGJFWshRIAeMSuozZ9mb75fbxw";
+dotenv.config();
+
+const token: string = process.env.DISCORD as string;
 
 const intents: ClientOptions['intents'] = ['Guilds', 'GuildMessages', 'GuildMessageReactions', "GuildVoiceStates", "GuildMembers", "MessageContent"];
 
