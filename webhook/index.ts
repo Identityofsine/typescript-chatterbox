@@ -1,7 +1,7 @@
 import express from 'express';
 import client from '../discord';
 import { DMChannel, EmbedBuilder, TextChannel } from 'discord.js';
-import { get, getAuthor, getCategory } from './api';
+import { get, getAuthor, getCategory, getPost } from './api';
 import { getTempImage } from './tempimg';
 import { loadMedia } from './loadmedia';
 
@@ -43,9 +43,14 @@ function getFirstCategory(taxonomies: WordPressExpectedInput['taxonomies']['cate
 	return taxonomies[Object.keys(taxonomies)[0]].term_id;
 }
 
+function stripHTML(html: string): string {
+	return html.replace(/<\/?[^>]+(>|$)/g, "");
+}
+
 async function sendMessage(body: WordPressExpectedInput, type: PostType) {
 	const title = body.post.post_title ?? " ";
-	const message = body.post.post_excerpt ?? " ";
+	const post = await getPost(`${body.post_id}`);
+	const message = stripHTML(post?.excerpt?.rendered ?? "N/A");
 	let image = await loadMedia(body.post_thumbnail);
 	if (image.startsWith('data:')) {
 		image = await getTempImage(image);

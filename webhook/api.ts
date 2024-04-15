@@ -92,6 +92,40 @@ export interface Category {
 	};
 }
 
+export interface Post {
+	date: string | null; // datetime
+	date_gmt: string | null; // datetime
+	guid: {
+		rendered: string;
+	};
+	id: number;
+	link: string; // uri
+	modified: string; // datetime
+	modified_gmt: string; // datetime
+	slug: string;
+	status: '';
+	type: string;
+	password?: string;
+	permalink_template?: string;
+	generated_slug?: string;
+	title: {
+		rendered: string;
+	};
+	content: {
+		rendered: string;
+	};
+	author: number | User;
+	excerpt: {
+		rendered: string;
+	};
+	featured_media: number;
+	meta: object;
+	sticky: boolean;
+	template: string;
+	categories: number[]; // array of category term IDs
+	tags: number[]; // array of post tag term IDs
+}
+
 export async function getAuthor(id: string): Promise<User | undefined> {
 	const response = await get<User[]>(`users?include[]=${id ?? 0}`);
 
@@ -100,6 +134,19 @@ export async function getAuthor(id: string): Promise<User | undefined> {
 	if (!user.avatar_urls) return user;
 
 	return user;
+}
+
+
+export async function getPost(id: string) {
+	const url: string = "posts" + `?include[]=${id ?? 0}`;
+	const response = await get<Post[] | undefined>(url);
+	const map = response?.map((post) => {
+		return {
+			...post,
+		}
+	});
+
+	return map?.[0] ?? undefined;
 }
 
 export async function getCategory(id: string): Promise<Category | undefined> {
