@@ -45,7 +45,7 @@ function getFirstCategory(taxonomies: WordPressExpectedInput['taxonomies']['cate
 
 async function sendMessage(body: WordPressExpectedInput, type: PostType) {
 	const title = body.post.post_title ?? " ";
-	const message = body.post.post_content ?? " ";
+	const message = body.post.post_excerpt ?? " ";
 	let image = await loadMedia(body.post_thumbnail);
 	if (image.startsWith('data:')) {
 		image = await getTempImage(image);
