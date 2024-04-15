@@ -1,6 +1,9 @@
 import express from 'express';
 import client from '../discord';
 import { DMChannel, EmbedBuilder, TextChannel } from 'discord.js';
+import { get, getAuthor, getCategory } from './api';
+import { getTempImage } from './tempimg';
+import { loadMedia } from './loadmedia';
 
 const app = express();
 
@@ -18,17 +21,6 @@ enum PostType {
 	CREATE = 0x10,
 }
 
-type WordPressInput = {
-	title: string;
-	message: string;
-	abstract: string;
-	image: string;
-	author: string;
-	authorIMG: string;
-	link: string;
-	type: PostType;
-}
-
 type WordPressExpectedInput = {
 	post_id: number;
 	post: {
@@ -38,38 +30,33 @@ type WordPressExpectedInput = {
 		post_excerpt: string;
 		post_thumbnail: string;
 		post_permalink: string;
+		post_modified: string,
 	};
 	post_meta: Record<string, string>;
 	post_thumbnail: string;
 	post_permalink: string;
-	taxonomies: Record<string, string>;
+	taxonomies: {
+		category: Record<string, any>
+	};
+}
+function getFirstCategory(taxonomies: WordPressExpectedInput['taxonomies']['category']): string {
+	return taxonomies[Object.keys(taxonomies)[0]].term_id;
 }
 
-/*
-post_id 	The post id of the created post.
-post 	The whole post object with all of its values
-post_meta 	An array of the whole post meta data.
-post_thumbnail 	The full featured image/thumbnail URL in the full size.
-post_permalink 	The permalink of the currently given post.
-taxonomies 	(Array) An array containing the taxonomy data of the assigned taxonomies. Custom Taxonomies are supported too.
-*/
-
-app.post('/webhook/wp/create', (req, res) => {
-	const body = req.body as WordPressExpectedInput;
-	const title = body.post.post_title;
-	const message = body.post.post_content;
-	const abstract = body.post.post_excerpt;
-	const image = body.post_thumbnail;
-	const link = "https://fofx.zip/limiality/" + body.taxonomies.category;
-	const author = body.post.post_author;
-	const authorIMG = body.post_meta.author_image;
-	const type = PostType.CREATE;
-
-	if (!(title && image && link && message && author && authorIMG && abstract)) {
-		console.log(title, image, link, message, author, authorIMG);
-		res.status(400).send('Missing required fields');
-		return;
+async function sendMessage(body: WordPressExpectedInput, type: PostType) {
+	const title = body.post.post_title ?? " ";
+	const message = body.post.post_content ?? " ";
+	let image = await loadMedia(body.post_thumbnail);
+	if (image.startsWith('data:')) {
+		image = await getTempImage(image);
 	}
+	const link = "https://fofx.zip/limiality/post/" + body.post_id;
+	const author = await (getAuthor(`${body.post.post_author}`));
+	let authorIMG = await loadMedia(author.avatar_urls?.[96]);
+	if (authorIMG.startsWith('data:')) {
+		authorIMG = await getTempImage(authorIMG);
+	}
+	const category = await getCategory(getFirstCategory(body.taxonomies.category));
 	//look for channels with the name 'announcements'
 	client.channels.fetch('835670046562058290')
 		.then(channel => {
@@ -77,19 +64,37 @@ app.post('/webhook/wp/create', (req, res) => {
 				.setTitle(`[${type === PostType.CREATE ? 'NEW' : 'UPDATED'}] Post: ${title}`)
 				.setDescription(message)
 				.setURL(link)
-				.setAuthor({ name: `${author}`, iconURL: authorIMG, url: 'https://fofx.zip/liminality/' })
-				.addFields({ name: 'Abstract', value: abstract, inline: false })
+				.setAuthor({ name: `${author.name}`, iconURL: authorIMG, url: 'https://fofx.zip/liminality/' })
+				.addFields({ name: 'Category', value: category.name ?? "REDACTED", inline: false })
 				.setImage(image)
-				.setTimestamp()
-				.setFooter({ text: 'Liminality', iconURL: 'https://fofx.zip/fx-favicon.svg' })
+				.setTimestamp(new Date(body.post.post_modified))
+				.setFooter({ text: 'Liminality', iconURL: 'https://avatars.githubusercontent.com/u/67929513?v=4' })
 				;
-
 			channel.isTextBased() && (channel as TextChannel).send({ embeds: [embed] });
 		})
 		.catch(err => {
 			console.error(err);
 		});
-	res.send('Message sent to channel');
+
+}
+
+app.post('/webhook/wp/create', async (req, res) => {
+	try {
+		await sendMessage(req.body, PostType.CREATE)
+		res.send('Message sent to channel');
+	} catch (e) {
+		res.send('Error: ' + e);
+	}
+});
+
+app.post('/webhook/wp/update', async (req, res) => {
+	try {
+		await sendMessage(req.body, PostType.UPDATE)
+		res.send('Message sent to channel');
+	} catch (e) {
+		console.error(e);
+		res.send('Error: ' + e);
+	}
 });
 
 app.listen(8337, () => {
