@@ -24,8 +24,6 @@ client.on("ready", () => {
 });
 
 client.on("messageCreate", prefix_middleware);
-
-
 client.login(token);
 
 export default client; 
