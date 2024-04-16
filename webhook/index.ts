@@ -55,7 +55,7 @@ async function sendMessage(body: WordPressExpectedInput, type: PostType) {
 	if (image.startsWith('data:')) {
 		image = await getTempImage(image);
 	}
-	const link = "https://fofx.zip/limiality/post/" + body.post_id;
+	const link = "https://fofx.zip/liminality/post/" + body.post_id;
 	const author = await (getAuthor(`${body.post.post_author}`));
 	let authorIMG = await loadMedia(author.avatar_urls?.[96]);
 	if (authorIMG.startsWith('data:')) {
