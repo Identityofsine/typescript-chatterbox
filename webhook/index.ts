@@ -23,24 +23,15 @@ enum PostType {
 
 type WordPressExpectedInput = {
 	post_id: number;
-	post: {
-		post_title: string;
-		post_author: number;
-		post_content: string;
-		post_excerpt: string;
-		post_thumbnail: string;
-		post_permalink: string;
-		post_modified: string,
-	};
-	post_meta: Record<string, string>;
-	post_thumbnail: string;
-	post_permalink: string;
-	taxonomies: {
-		category: Record<string, any>
-	};
-}
-function getFirstCategory(taxonomies: WordPressExpectedInput['taxonomies']['category']): string {
-	return taxonomies[Object.keys(taxonomies)[0]].term_id;
+	post_title: string;
+	post_url: string;
+	post_author: number;
+	post_author_image: string;
+	post_content: string;
+	post_excerpt: string;
+	post_timestamp: string;
+	post_thumbnail: string | false;
+	post_categories: string[];
 }
 
 function stripHTML(html: string): string {
@@ -48,20 +39,20 @@ function stripHTML(html: string): string {
 }
 
 async function sendMessage(body: WordPressExpectedInput, type: PostType) {
-	const title = body.post.post_title ?? " ";
-	const post = await getPost(`${body.post_id}`);
-	const message = stripHTML(post?.excerpt?.rendered ?? "N/A");
-	let image = await loadMedia(body.post_thumbnail);
+	const title = body.post_title ?? " ";
+	const message = stripHTML(body.post_excerpt ? body.post_excerpt : body.post_content.slice(0, 128) ?? "N/A");
+	let image = await loadMedia(body.post_thumbnail ? body.post_thumbnail : "");
 	if (image.startsWith('data:')) {
 		image = await getTempImage(image);
 	}
 	const link = "https://fofx.zip/liminality/post/" + body.post_id;
-	const author = await (getAuthor(`${body.post.post_author}`));
-	let authorIMG = await loadMedia(author.avatar_urls?.[96]);
+	const author = body.post_author;
+	let authorIMG = await loadMedia(body.post_author_image);
 	if (authorIMG.startsWith('data:')) {
 		authorIMG = await getTempImage(authorIMG);
 	}
-	const category = await getCategory(getFirstCategory(body.taxonomies.category));
+	const category = body.post_categories?.[0];
+
 	//look for channels with the name 'announcements'
 	client.channels.fetch('835670046562058290')
 		.then(channel => {
@@ -69,10 +60,10 @@ async function sendMessage(body: WordPressExpectedInput, type: PostType) {
 				.setTitle(`[${type === PostType.CREATE ? 'NEW' : 'UPDATED'}] Post: ${title}`)
 				.setDescription(message)
 				.setURL(link)
-				.setAuthor({ name: `${author.name}`, iconURL: authorIMG, url: 'https://fofx.zip/liminality/' })
-				.addFields({ name: 'Category', value: category.name ?? "REDACTED", inline: false })
+				.setAuthor({ name: `${author}`, iconURL: authorIMG, url: 'https://fofx.zip/liminality/' })
+				.addFields({ name: 'Category', value: category ?? "REDACTED", inline: false })
 				.setImage(image)
-				.setTimestamp(new Date(body.post.post_modified))
+				.setTimestamp(new Date(body.post_timestamp))
 				.setFooter({ text: 'Liminality', iconURL: 'https://avatars.githubusercontent.com/u/67929513?v=4' })
 				;
 			channel.isTextBased() && (channel as TextChannel).send({ embeds: [embed] });

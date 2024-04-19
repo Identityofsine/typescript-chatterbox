@@ -16,7 +16,7 @@ export async function loadMedia(url: string) {
 
 		return formattedBase64;
 	} catch (error) {
-		console.error('[loadMedia]Error fetching image: ', 'Possible 404 ');
+		console.error('[loadMedia.ts]Error fetching image: ', 'Possible 404 ');
 		return placeholder;
 	}
 }
