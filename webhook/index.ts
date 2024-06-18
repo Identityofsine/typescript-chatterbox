@@ -93,8 +93,8 @@ app.post('/webhook/wp/update', async (req, res) => {
 	}
 });
 
-app.listen(8337, () => {
-	console.log('Webhook Server is running on port 8337');
+app.listen(8331, () => {
+	console.log('Webhook Server is running on port 8331');
 });
 
 export default app;
