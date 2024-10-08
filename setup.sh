@@ -3,7 +3,7 @@
 # VARS
 SERVER_NAME="chatterbox"
 SERVER_PATH="/homebrew/typescript-chatterbox"
-SERVER_COMMAND="npm start"
+SERVER_COMMAND="npm"
 
 function download_pm2() {
 	echo "Attempting to download PM2..."
@@ -29,7 +29,7 @@ function setup_instance() {
 	if ! pm2 list | grep -q $SERVER_NAME
 	then
 		# start the server
-		pm2 start $SERVER_COMMAND --name $SERVER_NAME
+		pm2 start $SERVER_COMMAND --name "$SERVER_NAME" -- start
 		if [ $? -eq 0 ]; then
 			echo "Server started successfully."
 		else
