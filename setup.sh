@@ -26,7 +26,7 @@ function download_pm2() {
 function setup_instance() {
 	echo "Setting up the instance..."
 	# check if the server is running
-	if ! pm2 list | grep -q $SERVER_NAME
+	if pm2 list | grep -q $SERVER_NAME
 	then
 		# start the server
 		pm2 start $SERVER_COMMAND --name "$SERVER_NAME" -- start
