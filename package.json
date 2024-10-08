@@ -1,36 +1,35 @@
 {
-	"name": "chatterbox-typescript",
-	"type": "module",
-	"version": "0.0.1",
-	"description": "ChatterBox-Typescript",
-	"main": "index.ts",
-	"scripts": {
-		"start": "ts-node --esm index.ts",
-		"dev": "nodemon -- index.ts -d",
-		"release": "tsc && node index.js"
-	},
-	"author": "",
-	"license": "ISC",
-	"dependencies": {
-		"@discordjs/opus": "^0.9.0",
-		"@discordjs/voice": "^0.16.0",
-		"@distube/ytdl-core": "^4.13.2",
-		"axios": "^1.6.8",
-		"discord.js": "^14.13.0",
-		"dotenv": "^16.4.5",
-		"express": "^4.19.2",
-		"fluent-ffmpeg": "^2.1.2",
-		"libsodium-wrappers": "^0.7.13",
-		"minimist": "^1.2.8",
-		"nodemon": "^3.0.1",
-		"pm2": "^5.3.1",
-		"ts-node": "^10.9.1",
-		"typescript": "^5.2.2"
-	},
-	"devDependencies": {
-		"@types/express": "^4.17.21",
-		"@types/fluent-ffmpeg": "^2.1.22",
-		"@types/minimist": "^1.2.3",
-		"@types/tough-cookie": "^4.0.3"
-	}
+  "name": "chatterbox-typescript",
+  "version": "0.0.1",
+  "description": "ChatterBox-Typescript",
+  "main": "index.ts",
+  "scripts": {
+    "start": "ts-node --esm index.ts",
+    "dev": "nodemon -- index.ts -d",
+    "release": "tsc && node index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@discordjs/opus": "^0.9.0",
+    "@discordjs/voice": "^0.16.0",
+    "@distube/ytdl-core": "^4.14.4",
+    "axios": "^1.6.8",
+    "discord.js": "^14.13.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "fluent-ffmpeg": "^2.1.2",
+    "libsodium-wrappers": "^0.7.13",
+    "minimist": "^1.2.8",
+    "nodemon": "^3.0.1",
+    "pm2": "^5.3.1",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.2.2"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/fluent-ffmpeg": "^2.1.22",
+    "@types/minimist": "^1.2.3",
+    "@types/tough-cookie": "^4.0.3"
+  }	
 }
