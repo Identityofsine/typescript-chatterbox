@@ -6,6 +6,8 @@ const END_POINT = "https://a.liminal/wp-json/wp/v2/";
 const crt_dir = process.env.SSL_DIR as string ?? "";
 const https_agent = new https.Agent({
 	ca: fs.readFileSync(crt_dir),
+	//ignore unauthorized certificate
+	rejectUnauthorized: false
 }); // This is for self-signed certificate, change to env please
 
 export const axios_instance = axios.create({
