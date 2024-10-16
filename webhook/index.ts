@@ -51,7 +51,7 @@ async function sendMessage(body: WordPressExpectedInput, type: PostType) {
 	if (authorIMG.startsWith('data:')) {
 		authorIMG = await getTempImage(authorIMG);
 	}
-	const category = body.post_categories?.[body.post_categories.length - 1] ?? "REDACTED";
+	const category = body.post_categories.filter(o => o !== 'Uncatagorized')?.[body.post_categories.length - 1] ?? "REDACTED";
 
 	//look for channels with the name 'announcements'
 	client.channels.fetch('835670046562058290')
